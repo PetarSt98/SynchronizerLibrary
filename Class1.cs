@@ -3,8 +3,8 @@
 namespace SynchronizerLibrary;
 public class Class1
 {
-    public void printara()
+    public static void test()
     {
-        Console.WriteLine("CAO");
+        Console.WriteLine("test123");
     }
 }
