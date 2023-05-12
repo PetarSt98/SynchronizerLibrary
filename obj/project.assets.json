@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\pstojkov\\cernbox\\WINDOWS\\Desktop\\C\\SynchronizerLibrary\\SynchronizerLibrary.csproj",
+      "projectUniqueName": "C:\\Users\\pstojkov\\cernbox\\WINDOWS\\Desktop\\C\\RemoteDesktopSynchronizer\\SynchronizerLibrary\\SynchronizerLibrary.csproj",
       "projectName": "SynchronizerLibrary",
-      "projectPath": "C:\\Users\\pstojkov\\cernbox\\WINDOWS\\Desktop\\C\\SynchronizerLibrary\\SynchronizerLibrary.csproj",
+      "projectPath": "C:\\Users\\pstojkov\\cernbox\\WINDOWS\\Desktop\\C\\RemoteDesktopSynchronizer\\SynchronizerLibrary\\SynchronizerLibrary.csproj",
       "packagesPath": "C:\\Users\\pstojkov\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\pstojkov\\cernbox\\WINDOWS\\Desktop\\C\\SynchronizerLibrary\\obj\\",
+      "outputPath": "C:\\Users\\pstojkov\\cernbox\\WINDOWS\\Desktop\\C\\RemoteDesktopSynchronizer\\SynchronizerLibrary\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

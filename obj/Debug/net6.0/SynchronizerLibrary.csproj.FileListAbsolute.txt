@@ -1,0 +1,12 @@
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\bin\Debug\net6.0\SynchronizerLibrary.deps.json
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\bin\Debug\net6.0\SynchronizerLibrary.dll
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\bin\Debug\net6.0\SynchronizerLibrary.pdb
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\SynchronizerLibrary.csproj.AssemblyReference.cache
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\SynchronizerLibrary.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\SynchronizerLibrary.AssemblyInfoInputs.cache
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\SynchronizerLibrary.AssemblyInfo.cs
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\SynchronizerLibrary.csproj.CoreCompileInputs.cache
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\SynchronizerLibrary.dll
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\refint\SynchronizerLibrary.dll
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\SynchronizerLibrary.pdb
+C:\Users\pstojkov\cernbox\WINDOWS\Desktop\C\RemoteDesktopSynchronizer\SynchronizerLibrary\obj\Debug\net6.0\ref\SynchronizerLibrary.dll
