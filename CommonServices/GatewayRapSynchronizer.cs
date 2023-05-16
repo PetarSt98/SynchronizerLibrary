@@ -53,37 +53,46 @@ namespace SynchronizerLibrary.CommonServices
             const string AdSearchGroupPath = "WinNT://{0}/{1},group";
             const string NamespacePath = @"\root\CIMV2\TerminalServices";
             string _oldGatewayServerHost = $@"\\{serverName}.cern.ch";
-            try
+            int fatalCounter = 0;
+            while (true)
             {
-                const string osQuery = "SELECT * FROM Win32_TSGatewayResourceAuthorizationPolicy";
-                CimCredential Credentials = new CimCredential(PasswordAuthenticationMechanism.Default, "cern.ch", username, securepassword);
-
-                WSManSessionOptions SessionOptions = new WSManSessionOptions();
-                SessionOptions.AddDestinationCredentials(Credentials);
-                CimSession mySession = CimSession.Create(serverName, SessionOptions);
-                IEnumerable<CimInstance> queryInstance = mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery);
-                var rapNames = new List<string>();
-                Console.WriteLine($"Querying '{serverName}'.");
-                LoggerSingleton.SynchronizedRaps.Info($"Started querying RAP/Policy names from gateway '{serverName}'.");
-                var i = 1;
-                foreach (CimInstance x in queryInstance) 
+                try
                 {
-                    var policyName = x.CimInstanceProperties["Name"].Value.ToString();
-                    LoggerSingleton.SynchronizedRaps.Debug($"{i} - Querying RAP/Policy {policyName} from gateway '{serverName}'.");
-                    rapNames.Add(policyName);
-                    i++;
+                    const string osQuery = "SELECT * FROM Win32_TSGatewayResourceAuthorizationPolicy";
+                    CimCredential Credentials = new CimCredential(PasswordAuthenticationMechanism.Default, "cern.ch", username, securepassword);
+
+                    WSManSessionOptions SessionOptions = new WSManSessionOptions();
+                    SessionOptions.AddDestinationCredentials(Credentials);
+                    CimSession mySession = CimSession.Create(serverName, SessionOptions);
+                    IEnumerable<CimInstance> queryInstance = mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery);
+                    var rapNames = new List<string>();
+                    Console.WriteLine($"Querying '{serverName}'.");
+                    LoggerSingleton.SynchronizedRaps.Info($"Started querying RAP/Policy names from gateway '{serverName}'.");
+                    var i = 1;
+                    foreach (CimInstance x in queryInstance)
+                    {
+                        var policyName = x.CimInstanceProperties["Name"].Value.ToString();
+                        LoggerSingleton.SynchronizedRaps.Debug($"{i} - Querying RAP/Policy {policyName} from gateway '{serverName}'.");
+                        rapNames.Add(policyName);
+                        i++;
+                    }
+                    LoggerSingleton.SynchronizedRaps.Info($"Finished querying RAP/Policy names from gateway '{serverName}'.");
+
+                    Cacher.SaveCacheToFile(rapNames);
+                    return rapNames;
                 }
-                LoggerSingleton.SynchronizedRaps.Info($"Finished querying RAP/Policy names from gateway '{serverName}'.");
-
-                Cacher.SaveCacheToFile(rapNames);
-                return rapNames;
+                catch (Exception ex)
+                {
+                    fatalCounter++;
+                    LoggerSingleton.General.Error(ex, $"Error while getting rap names from gateway: '{serverName}'. Ex: {ex}");
+                    LoggerSingleton.SynchronizedRaps.Error(ex, $"Error while getting rap names from gateway: '{serverName}'. Ex: {ex}");
+                    LoggerSingleton.SynchronizedRaps.Info($"Retry querying NO {fatalCounter}");
+                    LoggerSingleton.General.Info($"Retry querying NO {fatalCounter}");
+                    if (fatalCounter == 3) break;
+                }
             }
-            catch (Exception ex)
-            {
-                LoggerSingleton.General.Fatal(ex, $"Error while getting rap names from gateway: '{serverName}'. Ex: {ex}");
-                LoggerSingleton.SynchronizedRaps.Fatal(ex, $"Error while getting rap names from gateway: '{serverName}'. Ex: {ex}");
-            }
-
+            LoggerSingleton.General.Fatal($"Failed to query policies from gateway {serverName}");
+            LoggerSingleton.SynchronizedRaps.Fatal($"Failed to query policies from gateway {serverName}");
             return new List<string>();
         }
 
