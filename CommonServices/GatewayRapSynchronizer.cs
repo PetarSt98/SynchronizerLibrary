@@ -88,11 +88,14 @@ namespace SynchronizerLibrary.CommonServices
                     LoggerSingleton.SynchronizedRaps.Error(ex, $"Error while getting rap names from gateway: '{serverName}'. Ex: {ex}");
                     LoggerSingleton.SynchronizedRaps.Info($"Retry querying NO {fatalCounter}");
                     LoggerSingleton.General.Info($"Retry querying NO {fatalCounter}");
-                    if (fatalCounter == 3) break;
+                    Console.WriteLine($"Error while getting rap names from gateway: '{serverName}'. Ex: {ex}");
+                    Console.WriteLine($"Retry querying NO {fatalCounter}");
+                    if (fatalCounter == 10) break;
                 }
             }
             LoggerSingleton.General.Fatal($"Failed to query policies from gateway {serverName}");
             LoggerSingleton.SynchronizedRaps.Fatal($"Failed to query policies from gateway {serverName}");
+            Console.WriteLine($"Failed to query policies from gateway {serverName}");
             return new List<string>();
         }
 
