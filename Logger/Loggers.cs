@@ -16,7 +16,9 @@ namespace SynchronizerLibrary.Loggers
         // Static constructor to initialize the loggers
         static LoggerSingleton()
         {
-            string configFilePath = $@"{Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName}\nlog.config";
+            string configFilePath = $"{Environment.CurrentDirectory}/nlog.config";
+
+
             LogManager.Configuration = new XmlLoggingConfiguration(configFilePath);
 
             // Reload the NLog configuration
