@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Text.Json;
 using SynchronizerLibrary.Loggers;
-
+using SynchronizerLibrary.Data;
 
 namespace SynchronizerLibrary.CommonServices
 {
@@ -254,11 +254,48 @@ namespace SynchronizerLibrary.CommonServices
             LoggerSingleton.General.Info($"Adding {groupsToAdd.Count} new groups to the gateway '{serverName}'.");
             var addedGroups = new List<string>();
             var i = 1;
-            foreach (var lg in groupsToAdd)
+            using (var db = new RapContext())
             {
-                LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Adding group '{lg.Name}'.");
-                if (AddNewGroupWithContent(serverName, lg))
-                    addedGroups.Add(lg.Name);
+                foreach (var lg in groupsToAdd)
+                {
+                    LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Adding group '{lg.Name}'.");
+                    if (AddNewGroupWithContent(serverName, lg))
+                        addedGroups.Add(lg.Name);
+                        LoggerSingleton.SynchronizedLocalGroups.Info($"Added Local Group: {lg.Name} successfuly!");
+                        foreach (var member in lg.MembersObj.Names.Zip(lg.MembersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
+                        {
+                            if (member.Flag == LocalGroupFlag.Delete) continue;
+
+                            foreach (var computer in lg.ComputersObj.Names.Zip(lg.ComputersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
+                            {
+                                if (computer.Flag == LocalGroupFlag.Delete) continue;
+
+                                var matchingRaps = db.raps
+                                    .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
+                                    .ToList();
+
+
+                                var resourceNameToSearch = computer.Name;
+                                foreach (var rap in matchingRaps)
+                                {
+                                    var matchingRapResources = db.rap_resource
+                                        .Where(rr => rr.RAPName == rap.name && rr.resourceName == resourceNameToSearch)
+                                        .ToList();
+
+                                    rap.synchronized = true;
+                                    foreach (var rapResource in matchingRapResources)
+                                    {
+                                        rapResource.synchronized = true;
+                                        // send emails here
+                                    }
+                                }
+                            }
+                        }
+
+                }
+
+
+
                 i++;
                 //if (i > 100) break;
             }
@@ -516,12 +553,34 @@ namespace SynchronizerLibrary.CommonServices
         private void SyncModifiedGroups(string serverName, List<LocalGroup> modifiedGroups)
         {
             LoggerSingleton.General.Info(serverName, $"Synchronizing content of {modifiedGroups.Count} groups.");
-            modifiedGroups.ForEach(lg => SyncGroupContent(lg, serverName));
+            using (var db = new RapContext())
+            {
+                modifiedGroups.ForEach(lg => SyncGroupContent(lg, serverName, db));
+            }
         }
 
-        private void SyncGroupContent(LocalGroup lg, string server)
+
+        //var rapsToSynchronize = db.raps.Where(r => r.synchronized == false).ToList();
+
+        //var rapResourcesToSynchronize = db.rap_resource.Where(rr => rr.synchronized == false).ToList();
+
+        //    foreach (var rap in rapsToSynchronize)
+        //    {
+        //        rap.synchronized = true;
+        //    }
+
+        //    foreach (var rapResource in rapResourcesToSynchronize)
+        //    {
+        //        rapResource.synchronized = true;
+        //    }
+
+
+        private void SyncGroupContent(LocalGroup lg, string server, RapContext db)
         {
-            LoggerSingleton.SynchronizedLocalGroups.Info(server, $"Synchronizing {lg.Name}.");
+
+            var raps = new List<rap>();
+            raps.AddRange(GetRaps(db));
+
             var success = true;
             var localGroup = GetLocalGroup(server, lg.Name);
             //if (CleanFromOrphanedSids(localGroup, lg, server)) // ovo popraviti jer nesto nije ok
@@ -538,9 +597,42 @@ namespace SynchronizerLibrary.CommonServices
             //    success = false;
             //}
             if (success)
+            {
                 LoggerSingleton.SynchronizedLocalGroups.Info($"Synchronized Local Group: {lg.Name} successfuly!");
+                foreach (var member in lg.MembersObj.Names.Zip(lg.MembersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
+                {
+                    if (member.Flag == LocalGroupFlag.Delete) continue;
+
+                    foreach (var computer in lg.ComputersObj.Names.Zip(lg.ComputersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
+                    {
+                        if (computer.Flag == LocalGroupFlag.Delete) continue;
+
+                        var matchingRaps = db.raps
+                            .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
+                            .ToList();
+
+
+                        var resourceNameToSearch = computer.Name;
+                        foreach (var rap in matchingRaps)
+                        {
+                            var matchingRapResources = db.rap_resource
+                                .Where(rr => rr.RAPName == rap.name && rr.resourceName == resourceNameToSearch)
+                                .ToList();
+
+                            rap.synchronized = true;
+                            foreach (var rapResource in matchingRapResources)
+                            {
+                                rapResource.synchronized = true;
+                                // send emails here
+                            }
+                        }
+                    }
+                }
+            }
             else
+            {
                 LoggerSingleton.SynchronizedLocalGroups.Info($"Unsuccessful synchronization og Local Group: {lg.Name}!");
+            }
         }
 
         private DirectoryEntry GetLocalGroup(string server, string groupName)
@@ -557,6 +649,20 @@ namespace SynchronizerLibrary.CommonServices
             {
                 throw;
             }
+        }
+        private IEnumerable<rap> GetRaps(RapContext db)
+        {
+            var results = new List<rap>();
+            try
+            {
+                results.AddRange(db.raps.Include("rap_resource").ToList());
+            }
+            catch (Exception)
+            {
+                LoggerSingleton.General.Fatal("Failed query.");
+                Console.WriteLine("Failed query.");
+            }
+            return results;
         }
 
         public bool CleanFromOrphanedSids(DirectoryEntry localGroup, LocalGroup lg, string serverName)
