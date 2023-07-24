@@ -38,8 +38,7 @@ namespace SynchronizerLibrary.CommonServices
                 LoggerSingleton.SynchronizedLocalGroups.Info(serverName, "Downloading the gateway config.");
                 var localGroups = new List<LocalGroup>();
                 var server = $"{serverName}.cern.ch";
-                var dstDir = AppConfig.GetInfoDir();
-                var path = dstDir + @"\" + serverName + ".json";
+                var path = AppConfig.GetInfoDir() + "\\" + serverName + ".json";
                 var localGroupNames = GetAllLocalGroups(server);
                 var i = 1;
                 foreach (var lg in localGroupNames)
@@ -525,19 +524,23 @@ namespace SynchronizerLibrary.CommonServices
             LoggerSingleton.SynchronizedLocalGroups.Info(server, $"Synchronizing {lg.Name}.");
             var success = true;
             var localGroup = GetLocalGroup(server, lg.Name);
-            if (CleanFromOrphanedSids(localGroup, lg, server)) // ovo popraviti jer nesto nije ok
-            {
+            //if (CleanFromOrphanedSids(localGroup, lg, server)) // ovo popraviti jer nesto nije ok
+            //{
                 if (!SyncMember(localGroup, lg, server))
                     success = false;
 
                 if (!SyncComputers(localGroup, lg, server))
                     success = false;
-            }
+            //}
+            //else
+            //{
+            //    LoggerSingleton.SynchronizedLocalGroups.Error($"Error while cleaning group: '{lg.Name}' from orphaned SIDs, further synchronization on this group is skipped.");
+            //    success = false;
+            //}
+            if (success)
+                LoggerSingleton.SynchronizedLocalGroups.Info($"Synchronized Local Group: {lg.Name} successfuly!");
             else
-            {
-                LoggerSingleton.SynchronizedLocalGroups.Error($"Error while cleaning group: '{lg.Name}' from orphaned SIDs, further synchronization on this group is skipped.");
-                success = false;
-            }
+                LoggerSingleton.SynchronizedLocalGroups.Info($"Unsuccessful synchronization og Local Group: {lg.Name}!");
         }
 
         private DirectoryEntry GetLocalGroup(string server, string groupName)
