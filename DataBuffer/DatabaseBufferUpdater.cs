@@ -11,6 +11,7 @@ namespace SynchronizerLibrary.DataBuffer
     {
         private GlobalInstance globalInstance;
         private Dictionary<string, RAP_ResourceStatus> databaseStatusUpdater;
+        private Dictionary<string, bool> partialStatus;
 
         public DatabaseSynchronizator()
         {
@@ -20,6 +21,8 @@ namespace SynchronizerLibrary.DataBuffer
         public void AverageGatewayReults()
         {
             databaseStatusUpdater = new Dictionary<string, RAP_ResourceStatus>();
+            partialStatus = new Dictionary<string, bool>();
+
             foreach (var name in globalInstance.Names)
             {
                 foreach (var obj in globalInstance.ObjectLists[name])
@@ -28,10 +31,12 @@ namespace SynchronizerLibrary.DataBuffer
                     if (!databaseStatusUpdater.ContainsKey(key))
                     {
                         databaseStatusUpdater[key] = obj;
+                        partialStatus[key] = obj.Status;
                     }
                     else
                     {
                         databaseStatusUpdater[key].Status &= obj.Status;
+                        partialStatus[key] |= obj.Status;
                     }
                 }
             }
@@ -41,12 +46,12 @@ namespace SynchronizerLibrary.DataBuffer
         {
             using (var db = new RapContext())
             {
-                foreach (KeyValuePair<string, RAP_ResourceStatus> item in databaseStatusUpdater)
+                foreach (var pair in databaseStatusUpdater.Zip(partialStatus, (item, partial) => (item, partial)))
                 {
-                    var obj = item.Value;
-                    if (!item.Value.Status)
+                    var obj = pair.item.Value;
+                    if (!pair.item.Value.Status)
                     {
-                        bool sendEmail = false;
+                        bool sendEmail = true;
 
                         if (sendEmail)
                         {
@@ -59,6 +64,19 @@ namespace SynchronizerLibrary.DataBuffer
                             string body = logMessage;
 
                             SendEmail(toAddress, subject, body);
+
+                            if (!pair.partial.Value)
+                            {
+                                var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && rr.resourceName == obj.ComputerName)).ToList();
+                                db.rap_resource.RemoveRange(rapResourcesToDelete);
+
+                                LoggerSingleton.General.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                                LoggerSingleton.Raps.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                                Console.WriteLine($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+
+                                db.SaveChanges();
+                            }
+
                         }
                         continue;
                     }
@@ -94,7 +112,6 @@ namespace SynchronizerLibrary.DataBuffer
                 }
                 db.SaveChanges();
             }
-
         }
 
         public void SendEmail(string toAddress, string subject, string body)
@@ -104,7 +121,7 @@ namespace SynchronizerLibrary.DataBuffer
             message.From = new MailAddress("no-reply@foo.bar.com");
 
             message.To.Add(new MailAddress("pstojkov@cern.ch"));
-            message.To.Add(new MailAddress(toAddress));
+            //message.To.Add(new MailAddress(toAddress));
             
 
             message.Subject = subject;

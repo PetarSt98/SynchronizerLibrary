@@ -33,11 +33,6 @@ namespace SynchronizerLibrary.DataBuffer
         }
     }
 
-    public class RAP_ResourceKey
-    {
-        public string ComputerName { get; set; }
-        public string GroupName { get; set; }
-    }
     public class RAP_ResourceStatus
     {
         public string ComputerName { get; set; }
