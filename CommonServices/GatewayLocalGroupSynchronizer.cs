@@ -262,44 +262,28 @@ namespace SynchronizerLibrary.CommonServices
                 {
                     LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Adding group '{lg.Name}'.");
                     if (AddNewGroupWithContent(serverName, lg))
+                    {
                         addedGroups.Add(lg.Name);
-                        LoggerSingleton.SynchronizedLocalGroups.Info($"Added Local Group: {lg.Name} successfuly!");
+
+                        LoggerSingleton.SynchronizedLocalGroups.Info($"Synchronized Local Group: {lg.Name} successfuly!");
                         foreach (var member in lg.MembersObj.Names.Zip(lg.MembersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
                         {
                             if (member.Flag == LocalGroupFlag.Delete) continue;
 
-                            foreach (var computer in lg.ComputersObj.Names.Zip(lg.ComputersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
+                            var matchingRaps = db.raps
+                                .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
+                                .ToList();
+
+                            foreach (var rap in matchingRaps)
                             {
-                                if (computer.Flag == LocalGroupFlag.Delete) continue;
-
-                                var matchingRaps = db.raps
-                                    .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
-                                    .ToList();
-
-
-                                var resourceNameToSearch = computer.Name;
-                                foreach (var rap in matchingRaps)
-                                {
-                                    var matchingRapResources = db.rap_resource
-                                        .Where(rr => rr.RAPName == rap.name && rr.resourceName == resourceNameToSearch)
-                                        .ToList();
-
-                                    rap.synchronized = true;
-                                    foreach (var rapResource in matchingRapResources)
-                                    {
-                                        rapResource.synchronized = true;
-                                        // send emails here
-                                    }
-                                }
+                                rap.synchronized = true;
                             }
+
                         }
+                    }
 
                 }
-
-
-
                 i++;
-                //if (i > 100) break;
             }
             LoggerSingleton.General.Info(serverName, $"Finished adding {addedGroups.Count} new groups.");
             LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Finished adding {addedGroups.Count} new groups.");
