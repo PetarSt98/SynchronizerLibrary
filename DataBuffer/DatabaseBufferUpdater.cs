@@ -44,8 +44,24 @@ namespace SynchronizerLibrary.DataBuffer
                 foreach (KeyValuePair<string, RAP_ResourceStatus> item in databaseStatusUpdater)
                 {
                     var obj = item.Value;
-                    if (!item.Value.Status) continue;
+                    if (!item.Value.Status)
+                    {
+                        bool sendEmail = false;
 
+                        if (sendEmail)
+                        {
+                            string logMessage = $"Unsuccessfully synchronized Local Group: {obj.GroupName} and Device: {obj.ComputerName}";
+                            LoggerSingleton.Raps.Warn(logMessage);
+
+                            // Prepare the email
+                            string toAddress = obj.GroupName.Replace("LG-", "") + "@cern.ch";
+                            string subject = "Remote Desktop Service Synchronization Notification";
+                            string body = logMessage;
+
+                            SendEmail(toAddress, subject, body);
+                        }
+                        continue;
+                    }
                     Console.WriteLine($"  ComputerName: {obj.ComputerName}, GroupName: {obj.GroupName}");
 
                     // Selecting matching raps
@@ -64,7 +80,7 @@ namespace SynchronizerLibrary.DataBuffer
                         foreach (var resource in unsynchronizedRap.rap_resource.Where(rr => rr.resourceName == obj.ComputerName))
                         {
                             resource.synchronized = true;
-                            string logMessage = $"Rap_Resource successfully synchronized RAP_Name: {resource.RAPName}, Device name: {resource.resourceName}";
+                            string logMessage = $"Successfully synchronized User: {resource.RAPName.Replace("RAP_", "")} and Device: {resource.resourceName}";
                             LoggerSingleton.Raps.Info(logMessage);
 
                             // Prepare the email
@@ -81,7 +97,7 @@ namespace SynchronizerLibrary.DataBuffer
 
         }
 
-        public static void SendEmail(string toAddress, string subject, string body)
+        public void SendEmail(string toAddress, string subject, string body)
         {
 
             MailMessage message = new MailMessage();
