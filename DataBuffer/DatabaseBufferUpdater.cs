@@ -2,6 +2,8 @@
 using SynchronizerLibrary.Data;
 using SynchronizerLibrary.Loggers;
 using SynchronizerLibrary.Loggers;
+using System.Net;
+using System.Net.Mail;
 
 namespace SynchronizerLibrary.DataBuffer
 {
@@ -62,12 +64,40 @@ namespace SynchronizerLibrary.DataBuffer
                         foreach (var resource in unsynchronizedRap.rap_resource.Where(rr => rr.resourceName == obj.ComputerName))
                         {
                             resource.synchronized = true;
-                            LoggerSingleton.Raps.Info($"Rap_Resource successfuly synchronized RAP_Name: {resource.RAPName}, Device name: {resource.resourceName}");
+                            string logMessage = $"Rap_Resource successfully synchronized RAP_Name: {resource.RAPName}, Device name: {resource.resourceName}";
+                            LoggerSingleton.Raps.Info(logMessage);
+
+                            // Prepare the email
+                            string toAddress = resource.RAPName.Replace("RAP_", "") + "@cern.ch";
+                            string subject = "Remote Desktop Service Synchronization Notification";
+                            string body = logMessage;
+
+                            SendEmail(toAddress, subject, body);
                         }
                     }
                 }
                 db.SaveChanges();
             }
+
+        }
+
+        public static void SendEmail(string toAddress, string subject, string body)
+        {
+
+            MailMessage message = new MailMessage();
+            message.From = new MailAddress("no-reply@foo.bar.com");
+
+            message.To.Add(new MailAddress("pstojkov@cern.ch"));
+            message.To.Add(new MailAddress(toAddress));
+            
+
+            message.Subject = subject;
+            message.Body = body;
+
+            message.IsBodyHtml = true;
+
+            SmtpClient client = new SmtpClient("cernmx.cern.ch");
+            client.Send(message);
         }
 
     }
