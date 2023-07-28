@@ -3,6 +3,8 @@ using System.Collections;
 using System.Text.Json;
 using SynchronizerLibrary.Loggers;
 using SynchronizerLibrary.Data;
+using System.DirectoryServices.AccountManagement;
+using SynchronizerLibrary.DataBuffer;
 
 namespace SynchronizerLibrary.CommonServices
 {
@@ -482,14 +484,59 @@ namespace SynchronizerLibrary.CommonServices
             LoggerSingleton.SynchronizedLocalGroups.Info($"Adding new computer '{computerName}' to the group '{groupName}' on gateway '{serverName}'.");
             try
             {
-                try
+                var i = 0;
+                while (i < 1)
                 {
-                    groupEntry.Invoke("Add", $"WinNT://CERN/{computerName},computer");
-                    groupEntry.CommitChanges();
-                }
-                catch (System.Reflection.TargetInvocationException ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    try
+                    {
+                        if (!ExistsInGroup(groupEntry, computerName))
+                        {
+                            // Check if the computer exists before adding it to the group
+                            //if (ComputerExists(computerName, serverName))
+                            //{
+                            // Use the correct format for the member's path
+                            groupEntry.Invoke("Add", $"WinNT://{serverName}/{computerName},computer");
+                            groupEntry.CommitChanges();
+                            GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                            {
+                                ComputerName = computerName,
+                                GroupName = groupName,
+                                Status = true
+                            });
+                            break;
+                            //}
+                            //else
+                            //{
+                            //    // The computer does not exist or is not accessible
+                            //    i++;
+                            //    Console.WriteLine($"Failed attempt:{i}");
+                            //    LoggerSingleton.SynchronizedLocalGroups.Warn($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
+                            //    Console.WriteLine($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
+                            //    //break;
+                            //}
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+                    catch (System.Reflection.TargetInvocationException ex)
+                    {
+                        i++;
+                        Console.WriteLine($"Failed attempt:{i}");
+                        LoggerSingleton.SynchronizedLocalGroups.Warn($"Failed attempt:{i}");
+                        Console.WriteLine(ex.InnerException != null ? ex.InnerException.Message : ex.Message);
+                        Console.WriteLine($"Local Group name: {groupName}, unsuccessful adding computer: {computerName}");
+                        LoggerSingleton.SynchronizedLocalGroups.Warn(ex.InnerException != null ? ex.InnerException.Message : ex.Message);
+                        LoggerSingleton.SynchronizedLocalGroups.Warn($"Local Group name: {groupName}, unsuccessful adding computer: {computerName}");
+                        LoggerSingleton.SynchronizedLocalGroups.Warn($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
+                        GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                        {
+                            ComputerName = computerName,
+                            GroupName = groupName,
+                            Status = false
+                        });
+                    }
                 }
                 success = true;
 
@@ -497,10 +544,49 @@ namespace SynchronizerLibrary.CommonServices
             catch (Exception ex)
             {
                 LoggerSingleton.SynchronizedLocalGroups.Error(ex, $"Error while adding member '{computerName}' to group '{groupName}' on gateway '{serverName}'.");
+                GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                {
+                    ComputerName = computerName,
+                    GroupName = groupName,
+                    Status = false
+                });
                 success = false;
             }
-
             return success;
+        }
+
+        private bool ComputerExists(string computerName, string serverName)
+        {
+            try
+            {
+                DirectoryEntry computerEntry = new DirectoryEntry($"WinNT://{serverName}/{computerName},computer");
+                // Try to access a property of the computer to check if it exists and is accessible
+                _ = computerEntry.Properties["Name"].Value;
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private bool ExistsInGroup(DirectoryEntry groupEntry, string computerName)
+        {
+            var members = groupEntry.Invoke("Members") as IEnumerable;
+
+            if (members != null)
+            {
+                foreach (var member in members)
+                {
+                    var directoryEntryMember = new DirectoryEntry(member);
+                    if (directoryEntryMember.Name.Equals(computerName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public bool RemoveComputerFromLocalGroup(string computerName, string groupName, string serverName, DirectoryEntry groupEntry)
@@ -556,6 +642,7 @@ namespace SynchronizerLibrary.CommonServices
             using (var db = new RapContext())
             {
                 modifiedGroups.ForEach(lg => SyncGroupContent(lg, serverName, db));
+                db.SaveChanges();
             }
         }
 
@@ -577,15 +664,12 @@ namespace SynchronizerLibrary.CommonServices
 
         private void SyncGroupContent(LocalGroup lg, string server, RapContext db)
         {
-
-            var raps = new List<rap>();
-            raps.AddRange(GetRaps(db));
-
             var success = true;
             var localGroup = GetLocalGroup(server, lg.Name);
+            //DirectoryEntry localGroup = null;
             //if (CleanFromOrphanedSids(localGroup, lg, server)) // ovo popraviti jer nesto nije ok
             //{
-                if (!SyncMember(localGroup, lg, server))
+            if (!SyncMember(localGroup, lg, server))
                     success = false;
 
                 if (!SyncComputers(localGroup, lg, server))
@@ -603,30 +687,15 @@ namespace SynchronizerLibrary.CommonServices
                 {
                     if (member.Flag == LocalGroupFlag.Delete) continue;
 
-                    foreach (var computer in lg.ComputersObj.Names.Zip(lg.ComputersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
+                    var matchingRaps = db.raps
+                        .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
+                        .ToList();
+
+                    foreach (var rap in matchingRaps)
                     {
-                        if (computer.Flag == LocalGroupFlag.Delete) continue;
-
-                        var matchingRaps = db.raps
-                            .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
-                            .ToList();
-
-
-                        var resourceNameToSearch = computer.Name;
-                        foreach (var rap in matchingRaps)
-                        {
-                            var matchingRapResources = db.rap_resource
-                                .Where(rr => rr.RAPName == rap.name && rr.resourceName == resourceNameToSearch)
-                                .ToList();
-
-                            rap.synchronized = true;
-                            foreach (var rapResource in matchingRapResources)
-                            {
-                                rapResource.synchronized = true;
-                                // send emails here
-                            }
-                        }
+                        rap.synchronized = true;
                     }
+                    
                 }
             }
             else
@@ -635,6 +704,22 @@ namespace SynchronizerLibrary.CommonServices
             }
         }
 
+        //private DirectoryEntry GetLocalGroup(string server, string groupName)
+        //{
+        //    string username = "svcgtw";
+        //    string password = "7KJuswxQnLXwWM3znp";
+        //    var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
+        //    try
+        //    {
+        //        DirectoryEntry newGroup = ad.Children.Find(groupName, "group");
+        //        return newGroup;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw;
+        //    }
+        //}
+
         private DirectoryEntry GetLocalGroup(string server, string groupName)
         {
             string username = "svcgtw";
@@ -642,14 +727,24 @@ namespace SynchronizerLibrary.CommonServices
             var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
             try
             {
-                DirectoryEntry newGroup = ad.Children.Find(groupName, "group");
-                return newGroup;
+                foreach (DirectoryEntry childEntry in ad.Children)
+                {
+                    if (childEntry.SchemaClassName == "Group" && childEntry.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return childEntry;
+                    }
+                }
+
+                // If no matching group is found, throw an exception or return null based on your requirement
+                throw new Exception($"Local group '{groupName}' not found on server '{server}'.");
+                // return null; // Uncomment this line to return null if the group is not found
             }
             catch (Exception ex)
             {
                 throw;
             }
         }
+
         private IEnumerable<rap> GetRaps(RapContext db)
         {
             var results = new List<rap>();
