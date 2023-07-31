@@ -51,7 +51,7 @@ namespace SynchronizerLibrary.DataBuffer
                     var obj = pair.item.Value;
                     if (!pair.item.Value.Status)
                     {
-                        bool sendEmail = false;
+                        bool sendEmail = true;
 
                         if (sendEmail)
                         {
@@ -67,7 +67,7 @@ namespace SynchronizerLibrary.DataBuffer
 
                             if (!pair.partial.Value)
                             {
-                                var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && rr.resourceName == obj.ComputerName)).ToList();
+                                var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase))).ToList();
                                 db.rap_resource.RemoveRange(rapResourcesToDelete);
 
                                 LoggerSingleton.General.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
@@ -90,12 +90,12 @@ namespace SynchronizerLibrary.DataBuffer
 
                     // Filtering unsynchronized raps and their resources
                     var unsynchronizedRaps = matchingRaps
-                        .Where(r => r.rap_resource.Any(rr => rr.synchronized == false && rr.resourceName == obj.ComputerName))
+                        .Where(r => r.rap_resource.Any(rr => !rr.synchronized && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase) && !rr.toDelete))
                         .ToList();
 
                     foreach (var unsynchronizedRap in unsynchronizedRaps)
                     {
-                        foreach (var resource in unsynchronizedRap.rap_resource.Where(rr => rr.resourceName == obj.ComputerName))
+                        foreach (var resource in unsynchronizedRap.rap_resource.Where(rr => string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase)))
                         {
                             resource.synchronized = true;
                             string logMessage = $"Successfully synchronized User: {resource.RAPName.Replace("RAP_", "")} and Device: {resource.resourceName}";

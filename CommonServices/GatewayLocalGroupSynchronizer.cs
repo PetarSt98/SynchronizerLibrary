@@ -26,7 +26,7 @@ namespace SynchronizerLibrary.CommonServices
         }
         public bool DownloadGatewayConfig(string serverName)
         {
-            bool cacheFlag = true;
+            bool cacheFlag = false;
             if (cacheFlag)
                 return true;
             LoggerSingleton.General.Info($"Started fetching Local Groups from the server {serverName}");
@@ -255,7 +255,6 @@ namespace SynchronizerLibrary.CommonServices
         {
             LoggerSingleton.General.Info($"Adding {groupsToAdd.Count} new groups to the gateway '{serverName}'.");
             var addedGroups = new List<string>();
-            var i = 1;
             using (var db = new RapContext())
             {
                 foreach (var lg in groupsToAdd)
@@ -283,7 +282,7 @@ namespace SynchronizerLibrary.CommonServices
                     }
 
                 }
-                i++;
+                db.SaveChanges();
             }
             LoggerSingleton.General.Info(serverName, $"Finished adding {addedGroups.Count} new groups.");
             LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Finished adding {addedGroups.Count} new groups.");
@@ -481,7 +480,7 @@ namespace SynchronizerLibrary.CommonServices
                             groupEntry.CommitChanges();
                             GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
                             {
-                                ComputerName = computerName,
+                                ComputerName = computerName.Substring(0, computerName.Length - 1),
                                 GroupName = groupName,
                                 Status = true
                             });
@@ -489,6 +488,12 @@ namespace SynchronizerLibrary.CommonServices
                         }
                         else
                         {
+                            GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                            {
+                                ComputerName = computerName.Substring(0, computerName.Length - 1),
+                                GroupName = groupName,
+                                Status = true
+                            });
                             return true;
                         }
                     }
@@ -504,7 +509,7 @@ namespace SynchronizerLibrary.CommonServices
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
                         GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
                         {
-                            ComputerName = computerName,
+                            ComputerName = computerName.Substring(0, computerName.Length - 1),
                             GroupName = groupName,
                             Status = false
                         });
@@ -518,28 +523,13 @@ namespace SynchronizerLibrary.CommonServices
                 LoggerSingleton.SynchronizedLocalGroups.Error(ex, $"Error while adding member '{computerName}' to group '{groupName}' on gateway '{serverName}'.");
                 GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
                 {
-                    ComputerName = computerName,
+                    ComputerName = computerName.Substring(0, computerName.Length - 1),
                     GroupName = groupName,
                     Status = false
                 });
                 success = false;
             }
             return success;
-        }
-
-        private bool ComputerExists(string computerName, string serverName)
-        {
-            try
-            {
-                DirectoryEntry computerEntry = new DirectoryEntry($"WinNT://{serverName}/{computerName},computer");
-                // Try to access a property of the computer to check if it exists and is accessible
-                _ = computerEntry.Properties["Name"].Value;
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
         }
 
         private bool ExistsInGroup(DirectoryEntry groupEntry, string computerName)
