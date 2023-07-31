@@ -96,7 +96,7 @@ namespace SynchronizerLibrary.CommonServices
         {
             Name = name;
             var enumerable = groupContent.ToList();
-            Computers.AddRange(enumerable.Where(el => el.EndsWith("$")).Select(el => el.Substring(0, el.Length - 1)));
+            Computers.AddRange(enumerable.Where(el => el.EndsWith("$")));
             Members.AddRange(enumerable.Where(el => !el.EndsWith("$")));
             Flag = LocalGroupFlag.CheckForUpdate;
             MembersObj = new LocalGroupContent(Members);

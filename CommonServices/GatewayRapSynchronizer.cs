@@ -36,14 +36,14 @@ namespace SynchronizerLibrary.CommonServices
         }
         public List<string> GetRapNamesAsync(string serverName)
         {
-            bool cacheFlag = false;
+            bool cacheFlag = true;
             if (cacheFlag)
                 return Cacher.LoadCacheFromFile();
             else
-                return QueryGatewayRapNamesAsync(serverName);
+                return Task.Run(() => QueryGatewayRapNamesAsync(serverName)).GetAwaiter().GetResult();
         }
 
-        private List<string> QueryGatewayRapNamesAsync(string serverName)
+        private async Task<List<string>> QueryGatewayRapNamesAsync(string serverName)
         {
             var username = "svcgtw"; // replace with your username
             var password = "7KJuswxQnLXwWM3znp"; // replace with your password
@@ -64,7 +64,11 @@ namespace SynchronizerLibrary.CommonServices
                     WSManSessionOptions SessionOptions = new WSManSessionOptions();
                     SessionOptions.AddDestinationCredentials(Credentials);
                     CimSession mySession = CimSession.Create(serverName, SessionOptions);
-                    IEnumerable<CimInstance> queryInstance = mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery);
+
+                    // Make sure the QueryInstancesAsync exists and works as expected
+                    var queryInstanceTask = Task.Run(() => mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery));
+                    IEnumerable<CimInstance> queryInstance = await queryInstanceTask;
+
                     var rapNames = new List<string>();
                     Console.WriteLine($"Querying '{serverName}'.");
                     LoggerSingleton.SynchronizedRaps.Info($"Started querying RAP/Policy names from gateway '{serverName}'.");
@@ -95,6 +99,7 @@ namespace SynchronizerLibrary.CommonServices
             }
             LoggerSingleton.General.Fatal($"Failed to query policies from gateway {serverName}");
             LoggerSingleton.SynchronizedRaps.Fatal($"Failed to query policies from gateway {serverName}");
+            LoggerSingleton.SynchronizedRaps.Error($"Failed to query policies from gateway {serverName}");
             Console.WriteLine($"Failed to query policies from gateway {serverName}");
             return new List<string>();
         }

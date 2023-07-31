@@ -26,7 +26,7 @@ namespace SynchronizerLibrary.CommonServices
         }
         public bool DownloadGatewayConfig(string serverName)
         {
-            bool cacheFlag = false;
+            bool cacheFlag = true;
             if (cacheFlag)
                 return true;
             LoggerSingleton.General.Info($"Started fetching Local Groups from the server {serverName}");
@@ -218,7 +218,7 @@ namespace SynchronizerLibrary.CommonServices
             LoggerSingleton.SynchronizedLocalGroups.Info($"Removing group '{groupName}' from gateway '{server}'.");
             try
             {
-                var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
+                var ad = new DirectoryEntry($"WinNT://CERN,computer", username, password);
                 try
                 {
 
@@ -473,13 +473,11 @@ namespace SynchronizerLibrary.CommonServices
                 {
                     try
                     {
+
+
                         if (!ExistsInGroup(groupEntry, computerName))
                         {
-                            // Check if the computer exists before adding it to the group
-                            //if (ComputerExists(computerName, serverName))
-                            //{
-                            // Use the correct format for the member's path
-                            groupEntry.Invoke("Add", $"WinNT://{serverName}/{computerName},computer");
+                            groupEntry.Invoke("Add", $"WinNT://CERN/{computerName},computer");
                             groupEntry.CommitChanges();
                             GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
                             {
@@ -488,16 +486,6 @@ namespace SynchronizerLibrary.CommonServices
                                 Status = true
                             });
                             break;
-                            //}
-                            //else
-                            //{
-                            //    // The computer does not exist or is not accessible
-                            //    i++;
-                            //    Console.WriteLine($"Failed attempt:{i}");
-                            //    LoggerSingleton.SynchronizedLocalGroups.Warn($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
-                            //    Console.WriteLine($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
-                            //    //break;
-                            //}
                         }
                         else
                         {
@@ -523,7 +511,7 @@ namespace SynchronizerLibrary.CommonServices
                     }
                 }
                 success = true;
-
+                
             }
             catch (Exception ex)
             {
@@ -650,7 +638,6 @@ namespace SynchronizerLibrary.CommonServices
         {
             var success = true;
             var localGroup = GetLocalGroup(server, lg.Name);
-            //DirectoryEntry localGroup = null;
             //if (CleanFromOrphanedSids(localGroup, lg, server)) // ovo popraviti jer nesto nije ok
             //{
             if (!SyncMember(localGroup, lg, server))
@@ -688,22 +675,6 @@ namespace SynchronizerLibrary.CommonServices
             }
         }
 
-        //private DirectoryEntry GetLocalGroup(string server, string groupName)
-        //{
-        //    string username = "svcgtw";
-        //    string password = "7KJuswxQnLXwWM3znp";
-        //    var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
-        //    try
-        //    {
-        //        DirectoryEntry newGroup = ad.Children.Find(groupName, "group");
-        //        return newGroup;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
-
         private DirectoryEntry GetLocalGroup(string server, string groupName)
         {
             string username = "svcgtw";
@@ -727,21 +698,6 @@ namespace SynchronizerLibrary.CommonServices
             {
                 throw;
             }
-        }
-
-        private IEnumerable<rap> GetRaps(RapContext db)
-        {
-            var results = new List<rap>();
-            try
-            {
-                results.AddRange(db.raps.Include("rap_resource").ToList());
-            }
-            catch (Exception)
-            {
-                LoggerSingleton.General.Fatal("Failed query.");
-                Console.WriteLine("Failed query.");
-            }
-            return results;
         }
 
         public bool CleanFromOrphanedSids(DirectoryEntry localGroup, LocalGroup lg, string serverName)
