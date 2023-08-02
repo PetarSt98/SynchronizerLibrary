@@ -15,16 +15,19 @@ namespace SynchronizerLibrary.CommonServices
             Names = names;
             Flags = Enumerable.Repeat(LocalGroupFlag.None, names.Count).ToList();
         }
+
         public LocalGroupContent(List<string> names, List<LocalGroupFlag> flags)
         {
             Names = names;
             Flags = flags;
         }
+
         public void AddRange(LocalGroupContent subContent)
         {
             Names.AddRange(subContent.Names);
             Flags.AddRange(subContent.Flags);
         }
+
         public void AddRange(List<string> names, List<LocalGroupFlag> flags)
         {
             Names.AddRange(names);
@@ -35,6 +38,7 @@ namespace SynchronizerLibrary.CommonServices
     {
         public static string OrphanedSid = "S-1-5-";
     }
+
     public enum LocalGroupFlag
     {
         Add,
@@ -98,10 +102,22 @@ namespace SynchronizerLibrary.CommonServices
             var enumerable = groupContent.ToList();
             Computers.AddRange(enumerable.Where(el => el.EndsWith("$")));
             Members.AddRange(enumerable.Where(el => !el.EndsWith("$")));
+            Computers = Computers.ConvertAll(d => d.ToUpper());
             Flag = LocalGroupFlag.CheckForUpdate;
             MembersObj = new LocalGroupContent(Members);
             ComputersObj = new LocalGroupContent(Computers);
 
+        }
+
+        public void checkForOrphanedSid()
+        {
+            foreach (var it in MembersObj.Names.Select((Value, Index) => new { Value, Index }))
+            {
+                if (it.Value.StartsWith(Constants.OrphanedSid))
+                {
+                    ComputersObj.Flags[it.Index] = LocalGroupFlag.Delete;
+                }
+            }
         }
 
         public void AddMember(string member)

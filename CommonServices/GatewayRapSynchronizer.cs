@@ -36,7 +36,7 @@ namespace SynchronizerLibrary.CommonServices
         }
         public List<string> GetRapNamesAsync(string serverName)
         {
-            bool cacheFlag = true;
+            bool cacheFlag = false;
             if (cacheFlag)
                 return Cacher.LoadCacheFromFile();
             else

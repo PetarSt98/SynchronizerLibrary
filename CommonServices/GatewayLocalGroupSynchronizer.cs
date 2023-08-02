@@ -26,7 +26,7 @@ namespace SynchronizerLibrary.CommonServices
         }
         public bool DownloadGatewayConfig(string serverName)
         {
-            bool cacheFlag = true;
+            bool cacheFlag = false;
             if (cacheFlag)
                 return true;
             LoggerSingleton.General.Info($"Started fetching Local Groups from the server {serverName}");
@@ -399,12 +399,29 @@ namespace SynchronizerLibrary.CommonServices
             {
                 try
                 {
-                    groupEntry.Invoke("Remove", $"WinNT://CERN/{memberName},user");
+                    groupEntry.Invoke("Remove", $"WinNT://{memberName}");
                     groupEntry.CommitChanges();
                 }
                 catch (System.Reflection.TargetInvocationException ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    try
+                    {
+                        groupEntry.Invoke("Remove", $"WinNT://CERN/{memberName},user");
+                        groupEntry.CommitChanges();
+                    }
+                    catch (System.Reflection.TargetInvocationException ex2)
+                    {
+                        LoggerSingleton.SynchronizedLocalGroups.Warn($"Member already deleted '{memberName}' in the group '{groupName}' in gateway '{serverName}'.");
+                        Console.WriteLine(ex2.Message);
+                    }
+                    catch (Exception ex2)
+                    {
+                        throw ex2;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
                 }
                 success = true;
 
@@ -428,13 +445,29 @@ namespace SynchronizerLibrary.CommonServices
             {
                 try
                 {
-                    groupEntry.Invoke("Add", $"WinNT://CERN/{memberName},user");
+                    groupEntry.Invoke("Add", $"WinNT://{memberName}");
                     groupEntry.CommitChanges();
                 }
                 catch (System.Reflection.TargetInvocationException ex)
                 {
-                    LoggerSingleton.SynchronizedLocalGroups.Warn($"Member already exists '{memberName}' to the group '{groupName}' on gateway '{serverName}'.");
-                    Console.WriteLine(ex.Message);
+                    try
+                    {
+                        groupEntry.Invoke("Add", $"WinNT://CERN/{memberName},user");
+                        groupEntry.CommitChanges();
+                    }
+                    catch (System.Reflection.TargetInvocationException ex2)
+                    {
+                        LoggerSingleton.SynchronizedLocalGroups.Warn($"Member already exists '{memberName}' to the group '{groupName}' on gateway '{serverName}'.");
+                        Console.WriteLine(ex.Message);
+                    }
+                    catch (Exception ex2)
+                    {
+                        throw ex2;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
                 }
                 success = true;
 
@@ -479,12 +512,6 @@ namespace SynchronizerLibrary.CommonServices
                         {
                             groupEntry.Invoke("Add", $"WinNT://CERN/{computerName},computer");
                             groupEntry.CommitChanges();
-                            GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
-                            {
-                                ComputerName = computerName,
-                                GroupName = groupName,
-                                Status = true
-                            });
                             break;
                         }
                         else
@@ -502,14 +529,15 @@ namespace SynchronizerLibrary.CommonServices
                         LoggerSingleton.SynchronizedLocalGroups.Warn(ex.InnerException != null ? ex.InnerException.Message : ex.Message);
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Local Group name: {groupName}, unsuccessful adding computer: {computerName}");
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
-                        GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
-                        {
-                            ComputerName = computerName,
-                            GroupName = groupName,
-                            Status = false
-                        });
+
                     }
                 }
+                GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                {
+                    ComputerName = computerName,
+                    GroupName = groupName,
+                    Status = true
+                });
                 success = true;
                 
             }
@@ -525,21 +553,6 @@ namespace SynchronizerLibrary.CommonServices
                 success = false;
             }
             return success;
-        }
-
-        private bool ComputerExists(string computerName, string serverName)
-        {
-            try
-            {
-                DirectoryEntry computerEntry = new DirectoryEntry($"WinNT://{serverName}/{computerName},computer");
-                // Try to access a property of the computer to check if it exists and is accessible
-                _ = computerEntry.Properties["Name"].Value;
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
         }
 
         private bool ExistsInGroup(DirectoryEntry groupEntry, string computerName)
@@ -576,6 +589,7 @@ namespace SynchronizerLibrary.CommonServices
                 }
                 catch (System.Reflection.TargetInvocationException ex)
                 {
+                    LoggerSingleton.SynchronizedLocalGroups.Warn($"Device already exists '{computerName}' to the group '{groupName}' on gateway '{serverName}'.");
                     Console.WriteLine(ex.Message);
                 }
                 success = true;
@@ -638,19 +652,19 @@ namespace SynchronizerLibrary.CommonServices
         {
             var success = true;
             var localGroup = GetLocalGroup(server, lg.Name);
-            //if (CleanFromOrphanedSids(localGroup, lg, server)) // ovo popraviti jer nesto nije ok
-            //{
-            if (!SyncMember(localGroup, lg, server))
+            if (CleanFromOrphanedSids(localGroup, lg, server)) // ovo popraviti jer nesto nije ok
+            {
+                if (!SyncMember(localGroup, lg, server))
                     success = false;
 
                 if (!SyncComputers(localGroup, lg, server))
                     success = false;
-            //}
-            //else
-            //{
-            //    LoggerSingleton.SynchronizedLocalGroups.Error($"Error while cleaning group: '{lg.Name}' from orphaned SIDs, further synchronization on this group is skipped.");
-            //    success = false;
-            //}
+            }
+            else
+            {
+                LoggerSingleton.SynchronizedLocalGroups.Error($"Error while cleaning group: '{lg.Name}' from orphaned SIDs, further synchronization on this group is skipped.");
+                success = false;
+            }
             if (success)
             {
                 LoggerSingleton.SynchronizedLocalGroups.Info($"Synchronized Local Group: {lg.Name} successfuly!");
