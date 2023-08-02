@@ -255,7 +255,6 @@ namespace SynchronizerLibrary.CommonServices
         {
             LoggerSingleton.General.Info($"Adding {groupsToAdd.Count} new groups to the gateway '{serverName}'.");
             var addedGroups = new List<string>();
-            var i = 1;
             using (var db = new RapContext())
             {
                 foreach (var lg in groupsToAdd)
@@ -283,7 +282,7 @@ namespace SynchronizerLibrary.CommonServices
                     }
 
                 }
-                i++;
+                db.SaveChanges();
             }
             LoggerSingleton.General.Info(serverName, $"Finished adding {addedGroups.Count} new groups.");
             LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Finished adding {addedGroups.Count} new groups.");
@@ -516,6 +515,12 @@ namespace SynchronizerLibrary.CommonServices
                         }
                         else
                         {
+                            GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                            {
+                                ComputerName = computerName.Substring(0, computerName.Length - 1),
+                                GroupName = groupName,
+                                Status = true
+                            });
                             return true;
                         }
                     }
@@ -529,7 +534,6 @@ namespace SynchronizerLibrary.CommonServices
                         LoggerSingleton.SynchronizedLocalGroups.Warn(ex.InnerException != null ? ex.InnerException.Message : ex.Message);
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Local Group name: {groupName}, unsuccessful adding computer: {computerName}");
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
-
                     }
                 }
                 GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
@@ -546,7 +550,7 @@ namespace SynchronizerLibrary.CommonServices
                 LoggerSingleton.SynchronizedLocalGroups.Error(ex, $"Error while adding member '{computerName}' to group '{groupName}' on gateway '{serverName}'.");
                 GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
                 {
-                    ComputerName = computerName,
+                    ComputerName = computerName.Substring(0, computerName.Length - 1),
                     GroupName = groupName,
                     Status = false
                 });
