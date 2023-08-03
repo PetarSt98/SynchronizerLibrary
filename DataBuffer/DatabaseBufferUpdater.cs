@@ -51,7 +51,7 @@ namespace SynchronizerLibrary.DataBuffer
                     var obj = pair.item.Value;
                     if (!pair.item.Value.Status)
                     {
-                        bool sendEmail = true;
+                        bool sendEmail = false;
 
                         if (sendEmail)
                         {

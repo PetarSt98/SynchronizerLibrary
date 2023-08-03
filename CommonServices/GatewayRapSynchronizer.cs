@@ -21,6 +21,7 @@ namespace SynchronizerLibrary.CommonServices
 
         public List<string> GetGatewaysRapNamesAsync(string serverName)
         {
+            Console.WriteLine($"Getting RAP/Policy names from gateway '{serverName}'.");
             LoggerSingleton.General.Info($"Getting RAP/Policy names from gateway '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Getting RAP/Policy names from gateway '{serverName}'.");
             try
@@ -29,6 +30,7 @@ namespace SynchronizerLibrary.CommonServices
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Failed getting RAP/Policy names from gateway '{serverName}'.");
                 LoggerSingleton.SynchronizedRaps.Error(ex, $"Failed getting RAP/Policy names from gateway '{serverName}'.");
                 LoggerSingleton.General.Error(ex, $"Failed getting RAP/Policy names from gateway '{serverName}'.");
                 throw;
@@ -38,13 +40,31 @@ namespace SynchronizerLibrary.CommonServices
         {
             bool cacheFlag = false;
             if (cacheFlag)
+            {
+                Console.WriteLine($"Using cached policies");
                 return Cacher.LoadCacheFromFile();
+            }
             else
-                return Task.Run(() => QueryGatewayRapNamesAsync(serverName)).GetAwaiter().GetResult();
+            {
+                try
+                {
+                    Console.WriteLine($"Preparing to downloaod gateway policies");
+                    var bbb = aaa(serverName);
+                    return bbb;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to downloaod gateway policies");
+                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine(ex.Message);
+                    throw ex;
+                }
+            }
         }
 
-        private async Task<List<string>> QueryGatewayRapNamesAsync(string serverName)
+        private List<string> aaa(string serverName)
         {
+            Console.WriteLine($"Start Querying '{serverName}'.");
             var username = "svcgtw"; // replace with your username
             var password = "7KJuswxQnLXwWM3znp"; // replace with your password
             var securepassword = new SecureString();
@@ -65,9 +85,9 @@ namespace SynchronizerLibrary.CommonServices
                     SessionOptions.AddDestinationCredentials(Credentials);
                     CimSession mySession = CimSession.Create(serverName, SessionOptions);
 
-                    // Make sure the QueryInstancesAsync exists and works as expected
-                    var queryInstanceTask = Task.Run(() => mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery));
-                    IEnumerable<CimInstance> queryInstance = await queryInstanceTask;
+                    Console.WriteLine($"Connecting to gateway policies on '{serverName}'.");
+                    var queryInstanceTask = mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery);
+                    IEnumerable<CimInstance> queryInstance = queryInstanceTask;
 
                     var rapNames = new List<string>();
                     Console.WriteLine($"Querying '{serverName}'.");
