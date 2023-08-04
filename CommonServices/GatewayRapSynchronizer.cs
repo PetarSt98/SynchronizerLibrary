@@ -49,8 +49,7 @@ namespace SynchronizerLibrary.CommonServices
                 try
                 {
                     Console.WriteLine($"Preparing to downloaod gateway policies");
-                    var bbb = aaa(serverName);
-                    return bbb;
+                    return QueryGatewayRapNames(serverName);
                 }
                 catch (Exception ex)
                 {
@@ -62,7 +61,7 @@ namespace SynchronizerLibrary.CommonServices
             }
         }
 
-        private List<string> aaa(string serverName)
+        private List<string> QueryGatewayRapNames(string serverName)
         {
             Console.WriteLine($"Start Querying '{serverName}'.");
             var username = "svcgtw"; // replace with your username
