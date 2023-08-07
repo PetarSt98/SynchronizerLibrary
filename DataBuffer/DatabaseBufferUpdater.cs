@@ -4,6 +4,7 @@ using SynchronizerLibrary.Loggers;
 using SynchronizerLibrary.Loggers;
 using System.Net;
 using System.Net.Mail;
+using SynchronizerLibrary.SOAPservices;
 
 namespace SynchronizerLibrary.DataBuffer
 {
@@ -12,7 +13,8 @@ namespace SynchronizerLibrary.DataBuffer
         private GlobalInstance globalInstance;
         private Dictionary<string, RAP_ResourceStatus> databaseStatusUpdater;
         private Dictionary<string, bool> partialStatus;
-
+        private string username = "pstojkov";
+        private string password = "GeForce9800GT.";
         public DatabaseSynchronizator()
         {
             globalInstance = GlobalInstance.Instance;
@@ -44,6 +46,7 @@ namespace SynchronizerLibrary.DataBuffer
 
         public void UpdateDatabase()
         {
+            bool sendEmail = true;
             using (var db = new RapContext())
             {
                 foreach (var pair in databaseStatusUpdater.Zip(partialStatus, (item, partial) => (item, partial)))
@@ -51,17 +54,34 @@ namespace SynchronizerLibrary.DataBuffer
                     var obj = pair.item.Value;
                     if (!pair.item.Value.Status)
                     {
-                        bool sendEmail = false;
-
                         if (sendEmail)
                         {
                             string logMessage = $"Unsuccessfully synchronized Local Group: {obj.GroupName} and Device: {obj.ComputerName}";
                             LoggerSingleton.Raps.Warn(logMessage);
+                            //string body = logMessage;
 
-                            // Prepare the email
+                            Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, username, password)).Result;
+
+                            string firstName = deviceInfo["UsersName"]; // Dodaj ime
+                            firstName = firstName.ToLower(); // Convert the entire string to lowercase first
+                            char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
+                            firstName = firstLetter + firstName.Substring(1);
+                            string users = obj.GroupName.Replace("Lg-", "");
+                            string RemoteMachine = obj.ComputerName;
+
+                            // Load the HTML template from a file or from a string, 
+                            // then replace the placeholders with the actual values
+                            string template = System.IO.File.ReadAllText(@".\EmailTemplates\User_RequestFailed.htm");  // Replace with actual path
+                            template = template.Replace("$firstName", firstName);
+                            template = template.Replace("$users", users);
+                            template = template.Replace("$RemoteMachine", RemoteMachine);
+
+                            // Now use the template as the body of your email
                             string toAddress = obj.GroupName.Replace("LG-", "") + "@cern.ch";
                             string subject = "Remote Desktop Service Synchronization Notification";
-                            string body = logMessage;
+                            string body = template;
+
+
 
                             SendEmail(toAddress, subject, body);
 
@@ -100,13 +120,32 @@ namespace SynchronizerLibrary.DataBuffer
                             resource.synchronized = true;
                             string logMessage = $"Successfully synchronized User: {resource.RAPName.Replace("RAP_", "")} and Device: {resource.resourceName}";
                             LoggerSingleton.Raps.Info(logMessage);
+                            if (sendEmail)
+                            {
+                                // Prepare the email
+                                string toAddress = resource.RAPName.Replace("RAP_", "") + "@cern.ch";
+                                string subject = "Remote Desktop Service Synchronization Notification";
+                                //string body = logMessage;
 
-                            // Prepare the email
-                            string toAddress = resource.RAPName.Replace("RAP_", "") + "@cern.ch";
-                            string subject = "Remote Desktop Service Synchronization Notification";
-                            string body = logMessage;
+                                Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, username, password)).Result;
 
-                            SendEmail(toAddress, subject, body);
+                                string firstName = deviceInfo["UsersName"]; // Dodaj ime
+                                firstName = firstName.ToLower(); // Convert the entire string to lowercase first
+                                char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
+                                firstName = firstLetter + firstName.Substring(1);
+                                string users = obj.GroupName.Replace("Lg-", "");
+                                string RemoteMachine = obj.ComputerName;
+
+                                // Load the HTML template from a file or from a string, 
+                                // then replace the placeholders with the actual values
+                                string template = System.IO.File.ReadAllText(@".\EmailTemplates\User_RequestSucceeded.htm");  // Replace with actual path
+                                template = template.Replace("$firstName", firstName);
+                                template = template.Replace("$users", users);
+                                template = template.Replace("$RemoteMachine", RemoteMachine);
+                                string body = template;
+
+                                SendEmail(toAddress, subject, body);
+                            }
                         }
                     }
                 }
