@@ -538,7 +538,7 @@ namespace SynchronizerLibrary.CommonServices
                 }
                 GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
                 {
-                    ComputerName = computerName,
+                    ComputerName = computerName.Substring(0, computerName.Length - 1),
                     GroupName = groupName,
                     Status = true
                 });

@@ -71,7 +71,7 @@ namespace SynchronizerLibrary.DataBuffer
 
                             // Load the HTML template from a file or from a string, 
                             // then replace the placeholders with the actual values
-                            string template = System.IO.File.ReadAllText(@".\EmailTemplates\User_RequestFailed.htm");  // Replace with actual path
+                            string template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestFailed.htm");  // Replace with actual path
                             template = template.Replace("$firstName", firstName);
                             template = template.Replace("$users", users);
                             template = template.Replace("$RemoteMachine", RemoteMachine);
@@ -138,7 +138,7 @@ namespace SynchronizerLibrary.DataBuffer
 
                                 // Load the HTML template from a file or from a string, 
                                 // then replace the placeholders with the actual values
-                                string template = System.IO.File.ReadAllText(@".\EmailTemplates\User_RequestSucceeded.htm");  // Replace with actual path
+                                string template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestSucceeded.htm");  // Replace with actual path
                                 template = template.Replace("$firstName", firstName);
                                 template = template.Replace("$users", users);
                                 template = template.Replace("$RemoteMachine", RemoteMachine);
