@@ -13,7 +13,7 @@ namespace SynchronizerLibrary.SOAPservices
             try
             {
 
-                string pathToScript = @".\SOAPServiceScripts\SOAPNetworkService.ps1");
+                string pathToScript = @".\SOAPServiceScripts\SOAPNetworkService.ps1";
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
