@@ -28,7 +28,10 @@ namespace SynchronizerLibrary.CommonServices
         {
             bool cacheFlag = false;
             if (cacheFlag)
+            {
+                Console.WriteLine("Using cached downloaded Gateway Config");
                 return true;
+            }
             LoggerSingleton.General.Info($"Started fetching Local Groups from the server {serverName}");
             return ReadRemoteGatewayConfig(serverName);
         }
@@ -40,7 +43,7 @@ namespace SynchronizerLibrary.CommonServices
                 LoggerSingleton.SynchronizedLocalGroups.Info(serverName, "Downloading the gateway config.");
                 var localGroups = new List<LocalGroup>();
                 var server = $"{serverName}.cern.ch";
-                var path = AppConfig.GetInfoDir() + "\\" + serverName + ".json";
+                var path = serverName + ".json";
                 var localGroupNames = GetAllLocalGroups(server);
                 var i = 1;
                 foreach (var lg in localGroupNames)

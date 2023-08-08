@@ -41,7 +41,7 @@ namespace SynchronizerLibrary.CommonServices
             bool cacheFlag = false;
             if (cacheFlag)
             {
-                Console.WriteLine($"Using cached policies");
+                Console.WriteLine($"Using cached Gateway Policies");
                 return Cacher.LoadCacheFromFile();
             }
             else
