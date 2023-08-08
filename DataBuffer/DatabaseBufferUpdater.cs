@@ -159,17 +159,16 @@ namespace SynchronizerLibrary.DataBuffer
             MailMessage message = new MailMessage();
             message.From = new MailAddress("no-reply@foo.bar.com");
 
-            message.To.Add(new MailAddress("pstojkov@cern.ch"));
-            //message.To.Add(new MailAddress(toAddress));
-            
+            message.To.Add(new MailAddress(toAddress));
+            message.CC.Add(new MailAddress("pstojkov@cern.ch"));
 
             message.Subject = subject;
             message.Body = body;
-
             message.IsBodyHtml = true;
 
             SmtpClient client = new SmtpClient("cernmx.cern.ch");
             client.Send(message);
+            Console.WriteLine($"Send and email to {toAddress}");
         }
 
     }
