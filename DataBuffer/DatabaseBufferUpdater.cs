@@ -46,7 +46,7 @@ namespace SynchronizerLibrary.DataBuffer
 
         public void UpdateDatabase()
         {
-            bool sendEmail = true;
+            bool sendEmail = false;
             using (var db = new RapContext())
             {
                 foreach (var pair in databaseStatusUpdater.Zip(partialStatus, (item, partial) => (item, partial)))
@@ -78,7 +78,7 @@ namespace SynchronizerLibrary.DataBuffer
 
                             // Now use the template as the body of your email
                             string toAddress = obj.GroupName.Replace("LG-", "") + "@cern.ch";
-                            string subject = "Remote Desktop Service Synchronization Notification";
+                            string subject = "noreply - Remote Desktop Service Synchronization Notification";
                             string body = template;
 
 
@@ -124,7 +124,7 @@ namespace SynchronizerLibrary.DataBuffer
                             {
                                 // Prepare the email
                                 string toAddress = resource.RAPName.Replace("RAP_", "") + "@cern.ch";
-                                string subject = "Remote Desktop Service Synchronization Notification";
+                                string subject = "noreply - Remote Desktop Service Synchronization Notification";
                                 //string body = logMessage;
 
                                 Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, username, password)).Result;
@@ -157,10 +157,10 @@ namespace SynchronizerLibrary.DataBuffer
         {
 
             MailMessage message = new MailMessage();
-            message.From = new MailAddress("no-reply@foo.bar.com");
+            message.From = new MailAddress("noreply@cern.ch");
 
             message.To.Add(new MailAddress(toAddress));
-            message.CC.Add(new MailAddress("pstojkov@cern.ch"));
+            message.CC.Add(new MailAddress("cernts-tsgateway-admin@cern.ch"));
 
             message.Subject = subject;
             message.Body = body;

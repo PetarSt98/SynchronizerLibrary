@@ -12,6 +12,7 @@ namespace SynchronizerLibrary.Loggers
         private static readonly Logger LoggerRaps = LogManager.GetLogger("logfileMarkedObsoleteRaps");
         private static readonly Logger LoggerSynchronizedRAPs = LogManager.GetLogger("logfileSynchronizedRAPs");
         private static readonly Logger LoggerSynchronizedLocalGroups = LogManager.GetLogger("logfileSynchronizedLocalGroups");
+        private static readonly Logger LoggerErrors = LogManager.GetLogger("logfileErrors");
 
         // Static constructor to initialize the loggers
         static LoggerSingleton()
@@ -70,6 +71,14 @@ namespace SynchronizerLibrary.Loggers
             get
             {
                 return LoggerSynchronizedLocalGroups;
+            }
+        }
+
+        public static Logger Errors
+        {
+            get
+            {
+                return LoggerErrors;
             }
         }
     }
