@@ -305,6 +305,8 @@ namespace SynchronizerLibrary.CommonServices
                     success = false;
                 if (!SyncComputers(newGroup, lg, server))
                     success = false;
+                if (!SyncLAPS(lg))
+                    success = false;
             }
             else
             {
@@ -611,6 +613,36 @@ namespace SynchronizerLibrary.CommonServices
             return success;
         }
 
+        private bool SyncLAPS(LocalGroup lg)
+        {
+            bool status = true;
+            try
+            {
+                var computersData = lg.ComputersObj.Names.Zip(lg.ComputersObj.Flags, (i, j) => new { Name = i, Flag = j });
+                var membersData = lg.MembersObj.Names.Zip(lg.MembersObj.Flags, (i, j) => new { Name = i, Flag = j });
+                foreach (var computer in computersData)
+                {
+                    foreach (var member in membersData)
+                    {
+                        if (member.Flag == LocalGroupFlag.Delete && computer.Flag != LocalGroupFlag.Delete)
+                        {
+                            status = LAPSService.UpdateLaps(computer.Name, member.Name, "Add");
+                        }
+                        else
+                        {
+                            status = LAPSService.UpdateLaps(computer.Name, member.Name, "Remove");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerSingleton.SynchronizedLocalGroups.Error(ex.Message);
+                return false;
+            }
+            return status;
+        }
+
         private bool SyncComputers(DirectoryEntry newGroup, LocalGroup lg, string server)
         {
             //string groupName = FormatModifiedValue(lg.Name);
@@ -665,6 +697,8 @@ namespace SynchronizerLibrary.CommonServices
                     success = false;
 
                 if (!SyncComputers(localGroup, lg, server))
+                    success = false;
+                if (!SyncLAPS(lg))
                     success = false;
             }
             else

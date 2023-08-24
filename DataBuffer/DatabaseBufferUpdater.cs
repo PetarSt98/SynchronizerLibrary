@@ -46,7 +46,7 @@ namespace SynchronizerLibrary.DataBuffer
 
         public void UpdateDatabase()
         {
-            bool sendEmail = false;
+            bool sendEmail = true;
             using (var db = new RapContext())
             {
                 foreach (var pair in databaseStatusUpdater.Zip(partialStatus, (item, partial) => (item, partial)))
@@ -78,12 +78,14 @@ namespace SynchronizerLibrary.DataBuffer
 
                             // Now use the template as the body of your email
                             string toAddress = obj.GroupName.Replace("LG-", "") + "@cern.ch";
+                            //string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
+                            string toAddressCC = null;
                             string subject = "noreply - Remote Desktop Service Synchronization Notification";
                             string body = template;
 
 
 
-                            SendEmail(toAddress, subject, body);
+                            SendEmail(toAddress, toAddressCC, subject, body);
 
                             if (!pair.partial.Value)
                             {
@@ -124,11 +126,12 @@ namespace SynchronizerLibrary.DataBuffer
                             {
                                 // Prepare the email
                                 string toAddress = resource.RAPName.Replace("RAP_", "") + "@cern.ch";
+                                string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
                                 string subject = "noreply - Remote Desktop Service Synchronization Notification";
                                 //string body = logMessage;
 
                                 Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, username, password)).Result;
-
+                                // ako ja dodam maria ima da posalje njemu mejla al ce reci Dear Petar mesto mario
                                 string firstName = deviceInfo["UsersName"]; // Dodaj ime
                                 firstName = firstName.ToLower(); // Convert the entire string to lowercase first
                                 char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
@@ -144,7 +147,7 @@ namespace SynchronizerLibrary.DataBuffer
                                 template = template.Replace("$RemoteMachine", RemoteMachine);
                                 string body = template;
 
-                                SendEmail(toAddress, subject, body);
+                                SendEmail(toAddress, toAddressCC, subject, body);
                             }
                         }
                     }
@@ -153,14 +156,16 @@ namespace SynchronizerLibrary.DataBuffer
             }
         }
 
-        public void SendEmail(string toAddress, string subject, string body)
+        public void SendEmail(string toAddress,string toAddressCC, string subject, string body)
         {
 
             MailMessage message = new MailMessage();
             message.From = new MailAddress("noreply@cern.ch");
 
             message.To.Add(new MailAddress(toAddress));
-            message.CC.Add(new MailAddress("cernts-tsgateway-admin@cern.ch"));
+            if (toAddressCC != null)
+                message.CC.Add(new MailAddress(toAddressCC));
+            message.Bcc.Add(new MailAddress("cernts-tsgateway-admin@cern.ch"));
 
             message.Subject = subject;
             message.Body = body;
