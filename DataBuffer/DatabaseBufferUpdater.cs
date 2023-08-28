@@ -60,7 +60,7 @@ namespace SynchronizerLibrary.DataBuffer
                             LoggerSingleton.Raps.Warn(logMessage);
                             //string body = logMessage;
 
-                            Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, username, password)).Result;
+                            Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, obj.GroupName.Replace("LG-", ""), username, password)).Result;
 
                             string firstName = deviceInfo["UsersName"]; // Dodaj ime
                             firstName = firstName.ToLower(); // Convert the entire string to lowercase first
@@ -79,7 +79,7 @@ namespace SynchronizerLibrary.DataBuffer
                             // Now use the template as the body of your email
                             string toAddress = obj.GroupName.Replace("LG-", "") + "@cern.ch";
                             //string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
-                            string toAddressCC = null;
+                            string toAddressCC = deviceInfo["ResponsiblePersonUsername"] + "@cern.ch";
                             string subject = "noreply - Remote Desktop Service Synchronization Notification";
                             string body = template;
 
@@ -130,7 +130,7 @@ namespace SynchronizerLibrary.DataBuffer
                                 string subject = "noreply - Remote Desktop Service Synchronization Notification";
                                 //string body = logMessage;
 
-                                Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, username, password)).Result;
+                                Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, resource.RAPName.Replace("RAP_", ""), username, password)).Result;
                                 // ako ja dodam maria ima da posalje njemu mejla al ce reci Dear Petar mesto mario
                                 string firstName = deviceInfo["UsersName"]; // Dodaj ime
                                 firstName = firstName.ToLower(); // Convert the entire string to lowercase first

@@ -1,4 +1,5 @@
 ﻿param([String] $SetName1 = $(throw "Please specify the set name"),
+      [String] $SetUserName1 = $(throw "Please specify the set username"),
       [String] $UserName1 = $(throw "Please specify the username"),
       [String] $Password1 = $(throw "Please specify the password"))
 
@@ -16,6 +17,15 @@ function Get-LanDbSet([string] $SetName,[String] $UserName,[String] $Password) {
                 $DeviceInfo | Add-Member -MemberType NoteProperty -Name ResponsiblePersonUsername -Value $OwnerInfo.Name
                 $DeviceInfo | Add-Member -MemberType NoteProperty -Name UsersName -Value $DeviceInfo.UserPerson.FirstName
                 $DeviceInfo | Add-Member -MemberType NoteProperty -Name UsersSurname -Value $DeviceInfo.UserPerson.Name
+
+                if ($SetUserName1 -ne "null") {
+                    $UserInfo = Get-ADUser -Identity $SetUserName1 -Properties givenName
+                    $DeviceInfo | Add-Member -MemberType NoteProperty -Name UserGivenName -Value $UserInfo.givenName
+                }
+
+
+
+
                 return $DeviceInfo
 }
 

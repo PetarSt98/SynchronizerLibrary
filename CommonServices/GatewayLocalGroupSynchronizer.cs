@@ -598,7 +598,7 @@ namespace SynchronizerLibrary.CommonServices
                 }
                 catch (System.Reflection.TargetInvocationException ex)
                 {
-                    LoggerSingleton.SynchronizedLocalGroups.Warn($"Device already exists '{computerName}' to the group '{groupName}' on gateway '{serverName}'.");
+                    LoggerSingleton.SynchronizedLocalGroups.Warn($"Device '{computerName}' already removed from the group '{groupName}' on gateway '{serverName}'.");
                     Console.WriteLine(ex.Message);
                 }
                 success = true;
@@ -624,13 +624,13 @@ namespace SynchronizerLibrary.CommonServices
                 {
                     foreach (var member in membersData)
                     {
-                        if (member.Flag == LocalGroupFlag.Delete && computer.Flag != LocalGroupFlag.Delete)
+                        if (member.Flag != LocalGroupFlag.Delete && computer.Flag != LocalGroupFlag.Delete)
                         {
-                            status = LAPSService.UpdateLaps(computer.Name, member.Name, "Add");
+                            status = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
                         }
-                        else
+                        else if (member.Flag == LocalGroupFlag.Delete || computer.Flag == LocalGroupFlag.Delete)
                         {
-                            status = LAPSService.UpdateLaps(computer.Name, member.Name, "Remove");
+                            status = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Remove");
                         }
                     }
                 }

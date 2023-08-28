@@ -53,6 +53,13 @@ namespace SynchronizerLibrary.CommonServices
                     groupEntry.CommitChanges();
                 }
             }
+            catch (System.Reflection.TargetInvocationException ex)
+            {
+                if (ex.HResult == -2146232828)
+                {
+                    Loggers.LoggerSingleton.SynchronizedLocalGroups.Debug("User already deleted in LAPS");
+                }
+            }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
@@ -86,6 +93,10 @@ namespace SynchronizerLibrary.CommonServices
 
                         using (DirectoryEntry remoteDesktopGroup = GetRemoteDesktopUsersGroup(machineName, "Administrator", pass))
                         {
+                            if (remoteDesktopGroup == null)
+                            {
+                                return false;
+                            }
                             AddorRemoveUserToRemoteDesktopUsersGroup(remoteDesktopGroup, domain, newUser, lapsOperator);
                         }
                     }
@@ -96,8 +107,13 @@ namespace SynchronizerLibrary.CommonServices
             {
                 return false;
             }
-            catch (Exception ex)
+            catch (System.DirectoryServices.DirectoryServicesCOMException ex)
             {
+                if (ex.ErrorCode == -2147016656)
+                {
+                    return false;
+                }
+
                 throw ex;
             }
         }
