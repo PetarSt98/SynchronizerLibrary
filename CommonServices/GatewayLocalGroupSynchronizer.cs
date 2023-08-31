@@ -305,7 +305,7 @@ namespace SynchronizerLibrary.CommonServices
                     success = false;
                 if (!SyncComputers(newGroup, lg, server))
                     success = false;
-                if (!SyncLAPS(lg))
+                if (!SyncLAPS(server, lg))
                     success = false;
             }
             else
@@ -520,12 +520,13 @@ namespace SynchronizerLibrary.CommonServices
                         }
                         else
                         {
-                            GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
-                            {
-                                ComputerName = computerName.Substring(0, computerName.Length - 1),
-                                GroupName = groupName,
-                                Status = true
-                            });
+                            //GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                            //{
+                            //    ComputerName = computerName.Substring(0, computerName.Length - 1),
+                            //    GroupName = groupName,
+                            //    Status = true
+                            //});
+                            GlobalInstance.Instance.AddToObjectsList(serverName, computerName, groupName, true);
                             return true;
                         }
                     }
@@ -541,24 +542,26 @@ namespace SynchronizerLibrary.CommonServices
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Computer '{computerName}' does not exist or is not accessible on gateway '{serverName}'.");
                     }
                 }
-                GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
-                {
-                    ComputerName = computerName.Substring(0, computerName.Length - 1),
-                    GroupName = groupName,
-                    Status = true
-                });
+                //GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                //{
+                //    ComputerName = computerName.Substring(0, computerName.Length - 1),
+                //    GroupName = groupName,
+                //    Status = true
+                //});
+                GlobalInstance.Instance.AddToObjectsList(serverName, computerName, groupName, true);
                 success = true;
                 
             }
             catch (Exception ex)
             {
                 LoggerSingleton.SynchronizedLocalGroups.Error(ex, $"Error while adding member '{computerName}' to group '{groupName}' on gateway '{serverName}'.");
-                GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
-                {
-                    ComputerName = computerName.Substring(0, computerName.Length - 1),
-                    GroupName = groupName,
-                    Status = false
-                });
+                //GlobalInstance.Instance.ObjectLists[serverName].Add(new RAP_ResourceStatus
+                //{
+                //    ComputerName = computerName.Substring(0, computerName.Length - 1),
+                //    GroupName = groupName,
+                //    Status = false
+                //});
+                GlobalInstance.Instance.AddToObjectsList(serverName, computerName, groupName, false);
                 success = false;
             }
             return success;
@@ -613,7 +616,7 @@ namespace SynchronizerLibrary.CommonServices
             return success;
         }
 
-        private bool SyncLAPS(LocalGroup lg)
+        private bool SyncLAPS(string serverName, LocalGroup lg)
         {
             bool status = true;
             try
@@ -627,6 +630,7 @@ namespace SynchronizerLibrary.CommonServices
                         if (member.Flag != LocalGroupFlag.Delete && computer.Flag != LocalGroupFlag.Delete)
                         {
                             status = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
+                            GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + member.Name, status);
                         }
                         else if (member.Flag == LocalGroupFlag.Delete || computer.Flag == LocalGroupFlag.Delete)
                         {
@@ -698,7 +702,7 @@ namespace SynchronizerLibrary.CommonServices
 
                 if (!SyncComputers(localGroup, lg, server))
                     success = false;
-                if (!SyncLAPS(lg))
+                if (!SyncLAPS(server, lg))
                     success = false;
             }
             else

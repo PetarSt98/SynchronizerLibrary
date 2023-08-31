@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text;
 using SynchronizerLibrary.Loggers;
 using SynchronizerLibrary.Caching;
-
+using SynchronizerLibrary.DataBuffer;
 
 namespace SynchronizerLibrary.CommonServices
 {
@@ -241,12 +241,16 @@ namespace SynchronizerLibrary.CommonServices
                     {
                         Console.WriteLine($"{rapName} created. {++i}/{missingRapNames.Count}"); //TODO delete
                         LoggerSingleton.SynchronizedRaps.Info($"RAP '{rapName}' added to the gateway '{serverName}'.");
+                        //GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + rapName, true);
                         //_reporter.IncrementAddedRaps(serverName);
                     }
                     else
                     {
                         if ((uint)outParameters["ReturnValue"] == 2147749913)
+                        {
                             LoggerSingleton.SynchronizedRaps.Warn($"Error creating RAP: '{rapName}'. Reason: Already exists.");
+                            //GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + rapName, true);
+                        }
                         else
                             LoggerSingleton.SynchronizedRaps.Error($"Error creating RAP: '{rapName}'. Reason: {(uint)outParameters["ReturnValue"]}.");
                     }

@@ -9,12 +9,65 @@ namespace SynchronizerLibrary.DataBuffer
         private static readonly object _lock = new object();
 
         public List<string> Names { get; private set; }
-        public Dictionary<string, List<RAP_ResourceStatus>> ObjectLists { get; private set; }
+        public Dictionary<string, Dictionary<string, RAP_ResourceStatus>> ObjectLists { get; private set; }
 
         private GlobalInstance()
         {
             Names = new List<string>();
-            ObjectLists = new Dictionary<string, List<RAP_ResourceStatus>>();
+            ObjectLists = new Dictionary<string, Dictionary<string, RAP_ResourceStatus>>();
+        }
+
+        private static string ModifyComputerName(string computerName)
+        {
+            if (computerName[computerName.Length - 1] == '$')
+                return computerName.Substring(0, computerName.Length - 1);
+            else
+                return computerName;
+        }
+
+        public void AddToObjectsList(string serverName, string computerName, string groupName, bool status)
+        {
+            string configKey = GetConfigKey(computerName, groupName);
+
+            string modifiedComputerName = ModifyComputerName(computerName);
+            if (!ObjectLists.ContainsKey(serverName))
+            {
+                ObjectLists[serverName] = new Dictionary<string, RAP_ResourceStatus>();
+            }
+            if (!ObjectLists[serverName].ContainsKey(configKey))
+            {
+                ObjectLists[serverName][configKey] = new RAP_ResourceStatus
+                {
+                    ComputerName = modifiedComputerName,
+                    GroupName = groupName,
+                    Status = status
+                };
+            }
+            else 
+            {
+                ObjectLists[serverName][configKey].Status &= status;
+            }
+
+        }
+        public RAP_ResourceStatus GetObjectsList(string serverName, string computerName, string groupName)
+        {
+            string configKey = GetConfigKey(computerName, groupName);
+
+            if (!ObjectLists.ContainsKey(serverName))
+            {
+               throw new Exception($"Unknown server: {serverName}!");
+            }
+            if (!ObjectLists[serverName].ContainsKey(configKey))
+            {
+                throw new Exception($"Unknown config:{configKey}!");
+            }
+            return ObjectLists[serverName][configKey];
+        }
+
+        private static string GetConfigKey(string computerName, string groupName)
+        {
+            string modifiedComputerName = ModifyComputerName(computerName);
+            return $"{modifiedComputerName}-{groupName}";
         }
 
         public static GlobalInstance Instance

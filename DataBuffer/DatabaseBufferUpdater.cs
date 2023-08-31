@@ -29,16 +29,16 @@ namespace SynchronizerLibrary.DataBuffer
             {
                 foreach (var obj in globalInstance.ObjectLists[name])
                 {
-                    var key = $"{obj.ComputerName}-{obj.GroupName}";
+                    var key = $"{obj.Value.ComputerName}-{obj.Value.GroupName}";
                     if (!databaseStatusUpdater.ContainsKey(key))
                     {
-                        databaseStatusUpdater[key] = obj;
-                        partialStatus[key] = obj.Status;
+                        databaseStatusUpdater[key] = obj.Value;
+                        partialStatus[key] = obj.Value.Status;
                     }
                     else
                     {
-                        databaseStatusUpdater[key].Status &= obj.Status;
-                        partialStatus[key] |= obj.Status;
+                        databaseStatusUpdater[key].Status &= obj.Value.Status;
+                        partialStatus[key] |= obj.Value.Status;
                     }
                 }
             }
@@ -62,11 +62,11 @@ namespace SynchronizerLibrary.DataBuffer
 
                             Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, obj.GroupName.Replace("LG-", ""), username, password)).Result;
 
-                            string firstName = deviceInfo["UsersName"]; // Dodaj ime
-                            firstName = firstName.ToLower(); // Convert the entire string to lowercase first
-                            char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
-                            firstName = firstLetter + firstName.Substring(1);
-                            string users = obj.GroupName.Replace("Lg-", "");
+                            string firstName = deviceInfo["UserGivenName"]; // Dodaj ime
+                            //firstName = firstName.ToLower(); // Convert the entire string to lowercase first
+                            //char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
+                            //firstName = firstLetter + firstName.Substring(1);
+                            string users = obj.GroupName.Replace("LG-", "");
                             string RemoteMachine = obj.ComputerName;
 
                             // Load the HTML template from a file or from a string, 
@@ -87,17 +87,17 @@ namespace SynchronizerLibrary.DataBuffer
 
                             SendEmail(toAddress, toAddressCC, subject, body);
 
-                            if (!pair.partial.Value)
-                            {
-                                var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase))).ToList();
-                                db.rap_resource.RemoveRange(rapResourcesToDelete);
+                            //if (!pair.partial.Value)
+                            //{
+                            //    var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase))).ToList();
+                            //    db.rap_resource.RemoveRange(rapResourcesToDelete);
 
-                                LoggerSingleton.General.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
-                                LoggerSingleton.Raps.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
-                                Console.WriteLine($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                            //    LoggerSingleton.General.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                            //    LoggerSingleton.Raps.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                            //    Console.WriteLine($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
 
-                                db.SaveChanges();
-                            }
+                            //    db.SaveChanges();
+                            //}
 
                         }
                         continue;
@@ -132,11 +132,11 @@ namespace SynchronizerLibrary.DataBuffer
 
                                 Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, resource.RAPName.Replace("RAP_", ""), username, password)).Result;
                                 // ako ja dodam maria ima da posalje njemu mejla al ce reci Dear Petar mesto mario
-                                string firstName = deviceInfo["UsersName"]; // Dodaj ime
-                                firstName = firstName.ToLower(); // Convert the entire string to lowercase first
-                                char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
-                                firstName = firstLetter + firstName.Substring(1);
-                                string users = obj.GroupName.Replace("Lg-", "");
+                                string firstName = deviceInfo["UserGivenName"]; // Dodaj ime
+                                //firstName = firstName.ToLower(); // Convert the entire string to lowercase first
+                                //char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
+                                //firstName = firstLetter + firstName.Substring(1);
+                                string users = obj.GroupName.Replace("LG-", "");
                                 string RemoteMachine = obj.ComputerName;
 
                                 // Load the HTML template from a file or from a string, 
