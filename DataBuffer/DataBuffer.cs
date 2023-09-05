@@ -25,7 +25,7 @@ namespace SynchronizerLibrary.DataBuffer
                 return computerName;
         }
 
-        public void AddToObjectsList(string serverName, string computerName, string groupName, bool status)
+        public void AddToObjectsList(string serverName, string computerName, string groupName, bool status, string statusMessage = null)
         {
             string configKey = GetConfigKey(computerName, groupName);
 
@@ -40,7 +40,8 @@ namespace SynchronizerLibrary.DataBuffer
                 {
                     ComputerName = modifiedComputerName,
                     GroupName = groupName,
-                    Status = status
+                    Status = status,
+                    StatusMessage = statusMessage
                 };
             }
             else 
@@ -91,5 +92,6 @@ namespace SynchronizerLibrary.DataBuffer
         public string ComputerName { get; set; }
         public string GroupName { get; set; }
         public bool Status { get; set; }
+        public string StatusMessage { get; set; }
     }
 }

@@ -619,6 +619,7 @@ namespace SynchronizerLibrary.CommonServices
         private bool SyncLAPS(string serverName, LocalGroup lg)
         {
             bool status = true;
+            string statusMessage;
             try
             {
                 var computersData = lg.ComputersObj.Names.Zip(lg.ComputersObj.Flags, (i, j) => new { Name = i, Flag = j });
@@ -629,12 +630,12 @@ namespace SynchronizerLibrary.CommonServices
                     {
                         if (member.Flag != LocalGroupFlag.Delete && computer.Flag != LocalGroupFlag.Delete)
                         {
-                            status = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
+                            (status, statusMessage) = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
                             GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + member.Name, status);
                         }
                         else if (member.Flag == LocalGroupFlag.Delete || computer.Flag == LocalGroupFlag.Delete)
                         {
-                            status = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Remove");
+                            (status, statusMessage) = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Remove");
                         }
                     }
                 }

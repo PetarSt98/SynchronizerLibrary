@@ -5,7 +5,7 @@ namespace SynchronizerLibrary.CommonServices
 {
     class LAPSService
     {
-        private static DirectoryEntry GetRemoteDesktopUsersGroup(string machineName, string adminUsername, string adminPassword)
+        private static (DirectoryEntry, string) GetRemoteDesktopUsersGroup(string machineName, string adminUsername, string adminPassword)
         {
             try
             {
@@ -14,7 +14,7 @@ namespace SynchronizerLibrary.CommonServices
                 {
                     if (childEntry.SchemaClassName == "Group" && childEntry.Name.Equals("Remote Desktop Users", StringComparison.OrdinalIgnoreCase))
                     {
-                        return childEntry;
+                        return (childEntry, "Device is unreachable.");
                     }
                 }
                 throw new Exception($"Local group 'Remote Desktop Users' not found on server '{machineName}'.");
@@ -22,7 +22,7 @@ namespace SynchronizerLibrary.CommonServices
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return null;
+                return (null, ex.Message);
             }
         }
 
@@ -47,18 +47,30 @@ namespace SynchronizerLibrary.CommonServices
         {
             try
             {
-                if (!MemberExists(groupEntry, domain, userName))
+                if (lapsOperator == "Add")
                 {
-                    groupEntry.Invoke("Add", $"WinNT://{domain}/{userName}");
-                    groupEntry.CommitChanges();
+                    if (!MemberExists(groupEntry, domain, userName))
+                    {
+                        groupEntry.Invoke("Add", $"WinNT://{domain}/{userName}");
+                        groupEntry.CommitChanges();
+                    }
+                }
+                if (lapsOperator == "Remove")
+                {
+                    if (MemberExists(groupEntry, domain, userName))
+                    {
+                        groupEntry.Invoke("Remove", $"WinNT://{domain}/{userName}");
+                        groupEntry.CommitChanges();
+                    }
                 }
             }
             catch (System.Reflection.TargetInvocationException ex)
             {
-                if (ex.HResult == -2146232828)
-                {
-                    Loggers.LoggerSingleton.SynchronizedLocalGroups.Debug("User already deleted in LAPS");
-                }
+                //if (ex.HResult == -2146232828)
+                //{
+                //    Loggers.LoggerSingleton.SynchronizedLocalGroups.Debug("User already deleted in LAPS");
+                //}
+                throw ex;
             }
             catch (Exception ex)
             {
@@ -66,8 +78,9 @@ namespace SynchronizerLibrary.CommonServices
                 Loggers.LoggerSingleton.SynchronizedLocalGroups.Error(ex.Message);
                 throw ex;
             }
+            Console.WriteLine("Updated with LAPS");
         }
-        public static bool UpdateLaps(string machineName, string newUser, string lapsOperator)
+        public static (bool, string) UpdateLaps(string machineName, string newUser, string lapsOperator)
         {
             if (lapsOperator != "Add" && lapsOperator != "Remove")
             {
@@ -79,42 +92,81 @@ namespace SynchronizerLibrary.CommonServices
             string username = "svcgtw";
             string password = "7KJuswxQnLXwWM3znp";
             string domain = "CERN";
+            string statusMessage = "";
 
             try
             {
                 using (DirectoryEntry directoryEntry = new DirectoryEntry(ldapPath, username, password))
                 {
-
                     if (directoryEntry.Properties.Contains(lapsAttribute))
                     {
                         var pass = directoryEntry.Properties[lapsAttribute].Value.ToString();
 
-                        if (string.IsNullOrEmpty(pass)) throw new RemoteDesktopUserGroupNotFound($"Device: {machineName} is unreachable!");
-
-                        using (DirectoryEntry remoteDesktopGroup = GetRemoteDesktopUsersGroup(machineName, "Administrator", pass))
+                        if (string.IsNullOrEmpty(pass))
+                        {
+                            throw new RemoteDesktopUserGroupNotFound($"Device: {machineName} is unreachable!");
+                        }
+                        (DirectoryEntry remoteDesktopGroup, statusMessage) = GetRemoteDesktopUsersGroup(machineName, "Administrator", pass);
+                        using (remoteDesktopGroup)
                         {
                             if (remoteDesktopGroup == null)
                             {
-                                return false;
+                                return (false, statusMessage);
                             }
                             AddorRemoveUserToRemoteDesktopUsersGroup(remoteDesktopGroup, domain, newUser, lapsOperator);
                         }
                     }
                 }
-                return true;
+                return (true, "");
             }
             catch (RemoteDesktopUserGroupNotFound ex)
             {
-                return false;
+                return (false, "Unreachable password");
+            }
+            catch (System.Reflection.TargetInvocationException ex)
+            {
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine(ex.InnerException.Message);
+                    return (false, ex.InnerException.Message);
+                }
+                else
+                {
+                    return (false, ex.Message);
+                }
             }
             catch (System.DirectoryServices.DirectoryServicesCOMException ex)
             {
-                if (ex.ErrorCode == -2147016656)
-                {
-                    return false;
-                }
+                //if (ex.ErrorCode == -2147016656)
+                //{
+                //    return (false, "");
+                //}
 
-                throw ex;
+                //throw ex;
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine(ex.InnerException.Message);
+                    return (false, ex.InnerException.Message);
+                }
+                else
+                {
+                    return (false, ex.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine(ex.InnerException.Message);
+                    return (false, ex.InnerException.Message);
+                }
+                else
+                {
+                    return (false, ex.Message);
+                }
             }
         }
 
