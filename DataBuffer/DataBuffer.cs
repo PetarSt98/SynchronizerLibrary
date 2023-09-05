@@ -17,7 +17,7 @@ namespace SynchronizerLibrary.DataBuffer
             ObjectLists = new Dictionary<string, Dictionary<string, RAP_ResourceStatus>>();
         }
 
-        private static string ModifyComputerName(string computerName)
+        public static string ModifyComputerName(string computerName)
         {
             if (computerName[computerName.Length - 1] == '$')
                 return computerName.Substring(0, computerName.Length - 1);

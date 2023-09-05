@@ -230,6 +230,8 @@ namespace SynchronizerLibrary.DataBuffer
 
         public static void CleanCache(string deviceName, string userName)
         {
+            deviceName = GlobalInstance.ModifyComputerName(deviceName);
+
             string cacheKey = $"{userName}-{deviceName}";
 
             if (File.Exists(path))
@@ -249,6 +251,7 @@ namespace SynchronizerLibrary.DataBuffer
 
         public static bool CheckStatus(string deviceName, string userName, bool email = false)
         {
+            deviceName = GlobalInstance.ModifyComputerName(deviceName);
             string cacheKey = $"{userName}-{deviceName}";
 
             if (File.Exists(path))
