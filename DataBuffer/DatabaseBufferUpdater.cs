@@ -47,7 +47,8 @@ namespace SynchronizerLibrary.DataBuffer
 
         public void UpdateDatabase()
         {
-            bool sendEmail = true;
+            bool sendEmail;
+            sendEmail = true;
             using (var db = new RapContext())
             {
                 foreach (var pair in databaseStatusUpdater.Zip(partialStatus, (item, partial) => (item, partial)))
@@ -66,6 +67,7 @@ namespace SynchronizerLibrary.DataBuffer
                             string firstName = deviceInfo["UserGivenName"]; // Dodaj ime
                             //firstName = firstName.ToLower(); // Convert the entire string to lowercase first
                             //char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
+
                             //firstName = firstLetter + firstName.Substring(1);
                             string users = obj.GroupName.Replace("LG-", "");
                             string remoteMachine = obj.ComputerName;
@@ -119,6 +121,7 @@ namespace SynchronizerLibrary.DataBuffer
                             }
 
                             var cacheData = new SpamFailureHandler(remoteMachine, users);
+
                             cacheData.CacheSpam();
                             //if (!pair.partial.Value)
                             //{
@@ -162,15 +165,14 @@ namespace SynchronizerLibrary.DataBuffer
                                 string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
                                 string subject = "noreply - Remote Desktop Service Synchronization Notification";
                                 //string body = logMessage;
-
                                 Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, resource.RAPName.Replace("RAP_", ""), username, password)).Result;
+
                                 string firstName = deviceInfo["UserGivenName"]; // Dodaj ime
                                 //firstName = firstName.ToLower(); // Convert the entire string to lowercase first
                                 //char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
                                 //firstName = firstLetter + firstName.Substring(1);
                                 string users = obj.GroupName.Replace("LG-", "");
                                 string remoteMachine = obj.ComputerName;
-
                                 // Load the HTML template from a file or from a string, 
                                 // then replace the placeholders with the actual values
                                 string template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestSucceeded.htm");  // Replace with actual path
@@ -180,6 +182,7 @@ namespace SynchronizerLibrary.DataBuffer
                                 string body = template;
 
                                 SendEmail(toAddress, toAddressCC, subject, body);
+
                                 SpamFailureHandler.CleanCache(remoteMachine, users);
                             }
                         }
