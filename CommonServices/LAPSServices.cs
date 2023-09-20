@@ -7,6 +7,7 @@ namespace SynchronizerLibrary.CommonServices
     {
         private static (DirectoryEntry, string) GetRemoteDesktopUsersGroup(string machineName, string adminUsername, string adminPassword)
         {
+            Console.WriteLine($"LAPS password: {adminPassword}");
             try
             {
                 var ad = new DirectoryEntry($"WinNT://{machineName},computer", adminUsername, adminPassword);
@@ -14,7 +15,7 @@ namespace SynchronizerLibrary.CommonServices
                 {
                     if (childEntry.SchemaClassName == "Group" && childEntry.Name.Equals("Remote Desktop Users", StringComparison.OrdinalIgnoreCase))
                     {
-                        return (childEntry, "Device is unreachable.");
+                        return (childEntry, "All ok");
                     }
                 }
                 throw new Exception($"Local group 'Remote Desktop Users' not found on server '{machineName}'.");
@@ -22,7 +23,7 @@ namespace SynchronizerLibrary.CommonServices
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return (null, ex.Message);
+                return (null, "Device is unreachable.");
             }
         }
 
@@ -101,7 +102,7 @@ namespace SynchronizerLibrary.CommonServices
                     if (directoryEntry.Properties.Contains(lapsAttribute))
                     {
                         var pass = directoryEntry.Properties[lapsAttribute].Value.ToString();
-
+                        Console.WriteLine("LAPS got password");
                         if (string.IsNullOrEmpty(pass))
                         {
                             throw new RemoteDesktopUserGroupNotFound($"Device: {machineName} is unreachable!");
@@ -109,15 +110,18 @@ namespace SynchronizerLibrary.CommonServices
                         (DirectoryEntry remoteDesktopGroup, statusMessage) = GetRemoteDesktopUsersGroup(machineName, "Administrator", pass);
                         using (remoteDesktopGroup)
                         {
+                            Console.WriteLine("Entered device");
                             if (remoteDesktopGroup == null)
                             {
+                                Console.WriteLine("Entered device: unsuccessful");
+                                Console.WriteLine(statusMessage);
                                 return (false, statusMessage);
                             }
                             AddorRemoveUserToRemoteDesktopUsersGroup(remoteDesktopGroup, domain, newUser, lapsOperator);
                         }
                     }
                 }
-                return (true, "");
+                return (true, "All ok");
             }
             catch (RemoteDesktopUserGroupNotFound ex)
             {

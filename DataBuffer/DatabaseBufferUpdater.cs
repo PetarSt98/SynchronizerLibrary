@@ -58,82 +58,123 @@ namespace SynchronizerLibrary.DataBuffer
                     {
                         if (sendEmail)
                         {
-                            string logMessage = $"Unsuccessfully synchronized Local Group: {obj.GroupName} and Device: {obj.ComputerName}";
-                            LoggerSingleton.Raps.Warn(logMessage);
-                            //string body = logMessage;
-                            
-                            Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, obj.GroupName.Replace("LG-", ""), username, password)).Result;
-
-                            string firstName = deviceInfo["UserGivenName"]; // Dodaj ime
-                            //firstName = firstName.ToLower(); // Convert the entire string to lowercase first
-                            //char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
-
-                            //firstName = firstLetter + firstName.Substring(1);
-                            string users = obj.GroupName.Replace("LG-", "");
-                            string remoteMachine = obj.ComputerName;
-
-                            // Load the HTML template from a file or from a string, 
-                            // then replace the placeholders with the actual values
-                            string template;
-                            if (obj.StatusMessage == "Access is denied.")
+                            try
                             {
-                                template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
-                                template = template.Replace("$reason", "TS Gateway does not have access to your device.");
-                                template = template.Replace("$reason_fr", "TS Gateway n'a pas accès à votre appareil.");
+                                Console.WriteLine("Sending email");
+                                string logMessage = $"Unsuccessfully synchronized Local Group: {obj.GroupName} and Device: {obj.ComputerName}";
+                                LoggerSingleton.Raps.Warn(logMessage);
+                                //string body = logMessage;
+
+                                Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, obj.GroupName.Replace("LG-", ""), username, password)).Result;
+                                if (deviceInfo == null) break;
+                                Console.WriteLine(deviceInfo["UserGivenName"]);
+                                string firstName = deviceInfo["UserGivenName"]; // Dodaj ime
+                                                                                //firstName = firstName.ToLower(); // Convert the entire string to lowercase first
+                                                                                //char firstLetter = char.ToUpper(firstName[0]); // Convert the first character to uppercase
+
+                                //firstName = firstLetter + firstName.Substring(1);
+                                string users = obj.GroupName.Replace("LG-", "");
+                                string remoteMachine = obj.ComputerName;
+
+                                // Load the HTML template from a file or from a string, 
+                                // then replace the placeholders with the actual values
+
+                                Console.WriteLine(remoteMachine);
+                                Console.WriteLine(users);
+                                string template;
+                                string subject;
+                                if (obj.StatusMessage != null)
+                                {
+                                    Console.WriteLine("Status");
+                                    Console.WriteLine(obj.StatusMessage);
+                                    
+                                    if (obj.StatusMessage == "Access is denied.")
+                                    {
+                                        subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                                        template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
+                                        template = template.Replace("$reason", "TS Gateway does not have access to your device.");
+                                        template = template.Replace("$raison", "TS Gateway n'a pas accès à votre appareil.");
+                                    }
+                                    else if (obj.StatusMessage == "There is no such object on the server.")
+                                    {
+                                        subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                                        template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
+                                        template = template.Replace("$reason", "The device cannot be found on the server.");
+                                        template = template.Replace("$raison", "L'appareil n'est pas trouvé sur le serveur.");
+                                    }
+                                    else if (obj.StatusMessage.Contains("disabled"))
+                                    {
+                                        subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                                        template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
+                                        template = template.Replace("$reason", "Administrator user in Local User and Groups on your machine is disabled.");
+                                        template = template.Replace("$raison", "L'utilisateur administrateur est désactivé dans le groupe local d'utilisateurs et de groupes de votre machine.");
+                                    }
+                                    else if (obj.StatusMessage == "Device is unreachable.")
+                                    {
+                                        subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                                        template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
+                                        template = template.Replace("$reason", "Your device is not reachable by TS Gateway.");
+                                        template = template.Replace("$raison", "Votre appareil n'est pas accessible par TS Gateway.");
+                                    }
+                                    else if (obj.StatusMessage == "The network path was not found.")
+                                    {
+                                        subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                                        template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
+                                        template = template.Replace("$reason", "Your device was offline when TS Gateway tried to reach it.");
+                                        template = template.Replace("$raison", "Votre appareil était hors ligne lorsque TS Gateway a essayé de le joindre.");
+                                    }
+                                    else
+                                    {
+                                        subject = "no-reply Remote Desktop Service device synchronization Failed";
+                                        template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestFailed.htm");  // Replace with actual path
+                                    }
+                                }
+                                else
+                                {
+                                    subject = "no-reply Remote Desktop Service device synchronization Failed";
+                                    Console.WriteLine("No Status");
+                                    template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestFailed.htm");
+                                }
+                                template = template.Replace("$firstName", firstName);
+                                template = template.Replace("$users", users);
+                                template = template.Replace("$RemoteMachine", remoteMachine);
+
+                                // Now use the template as the body of your email
+                                string toAddress = obj.GroupName.Replace("LG-", "") + "@cern.ch";
+                                //string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
+                                string toAddressCC = deviceInfo["ResponsiblePersonUsername"] + "@cern.ch";
+                                
+                                string body = template;
+
+                                Console.WriteLine(subject);
+                                if (!SpamFailureHandler.CheckStatus(remoteMachine, users, true))
+                                {
+                                    
+                                    Console.WriteLine(subject);
+                                    SendEmail(toAddress, toAddressCC, subject, body);
+                                    Console.WriteLine("Email sent");
+                                }
+
+                                var cacheData = new SpamFailureHandler(remoteMachine, users);
+
+                                cacheData.CacheSpam();
+                                //if (!pair.partial.Value)
+                                //{
+                                //    var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase))).ToList();
+                                //    db.rap_resource.RemoveRange(rapResourcesToDelete);
+
+                                //    LoggerSingleton.General.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                                //    LoggerSingleton.Raps.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                                //    Console.WriteLine($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+
+                                //    db.SaveChanges();
+                                //}
                             }
-                            else if (obj.StatusMessage.Contains("disabled"))
+                            catch (Exception ex)
                             {
-                                template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
-                                template = template.Replace("$reason", "Administrator user in Local User and Groups on your machine is disabled.");
-                                template = template.Replace("$reason_fr", "L'utilisateur administrateur est désactivé dans le groupe local d'utilisateurs et de groupes de votre machine.");
+                                Console.WriteLine("No Status");
+                                Console.WriteLine(ex.Message);
                             }
-                            else if (obj.StatusMessage == "Device is unreachable.")
-                            {
-                                template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
-                                template = template.Replace("$reason", "Your device is not reachable by TS Gateway.");
-                                template = template.Replace("$reason_fr", "Votre appareil n'est pas accessible par TS Gateway.");
-                            }
-                            else if (obj.StatusMessage == "The network path was not found.")
-                            {
-                                template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
-                                template = template.Replace("$reason", "Your device was offline when TS Gateway tried to reach it.");
-                                template = template.Replace("$reason_fr", "Votre appareil était hors ligne lorsque TS Gateway a essayé de le joindre.");
-                            }
-                            else
-                            {
-                                template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestFailed.htm");  // Replace with actual path
-                            }
-                            template = template.Replace("$firstName", firstName);
-                            template = template.Replace("$users", users);
-                            template = template.Replace("$RemoteMachine", remoteMachine);
-
-                            // Now use the template as the body of your email
-                            string toAddress = obj.GroupName.Replace("LG-", "") + "@cern.ch";
-                            //string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
-                            string toAddressCC = deviceInfo["ResponsiblePersonUsername"] + "@cern.ch";
-                            string subject = "noreply - Remote Desktop Service Synchronization Notification";
-                            string body = template;
-
-
-                            if (!SpamFailureHandler.CheckStatus(remoteMachine, users, true))
-                            {
-                                SendEmail(toAddress, toAddressCC, subject, body);
-                            }
-
-                            var cacheData = new SpamFailureHandler(remoteMachine, users);
-
-                            cacheData.CacheSpam();
-                            //if (!pair.partial.Value)
-                            //{
-                            //    var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase))).ToList();
-                            //    db.rap_resource.RemoveRange(rapResourcesToDelete);
-
-                            //    LoggerSingleton.General.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
-                            //    LoggerSingleton.Raps.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
-                            //    Console.WriteLine($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
-
-                            //    db.SaveChanges();
-                            //}
 
                         }
                         continue;
@@ -163,7 +204,7 @@ namespace SynchronizerLibrary.DataBuffer
                                 // Prepare the email
                                 string toAddress = resource.RAPName.Replace("RAP_", "") + "@cern.ch";
                                 string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
-                                string subject = "noreply - Remote Desktop Service Synchronization Notification";
+                                string subject = "no-reply Remote Desktop Service device synchronization Success";
                                 //string body = logMessage;
                                 Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, resource.RAPName.Replace("RAP_", ""), username, password)).Result;
 
@@ -181,6 +222,7 @@ namespace SynchronizerLibrary.DataBuffer
                                 template = template.Replace("$RemoteMachine", remoteMachine);
                                 string body = template;
 
+                                Console.WriteLine(subject);
                                 SendEmail(toAddress, toAddressCC, subject, body);
 
                                 SpamFailureHandler.CleanCache(remoteMachine, users);

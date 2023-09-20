@@ -196,18 +196,22 @@ namespace SynchronizerLibrary.CommonServices
         {
             LoggerSingleton.General.Info($"Started deleting {groupsToDelete.Count} groups on gateway '{serverName}'.");
             //_reporter.Info(serverName, $"Deleting {groupsToDelete.Count} groups.");
-            groupsToDelete.ForEach(lg => DeleteGroup(serverName, lg.Name)); // delete each group with '-' in the name
+            groupsToDelete.ForEach(lg => DeleteGroup(serverName, lg)); // delete each group with '-' in the name
             LoggerSingleton.General.Info(serverName, "Finished deleting groups.");
         }
 
-        private void DeleteGroup(string server, string localGroup)
+        private void DeleteGroup(string server, LocalGroup localGroup)
         {
             LoggerSingleton.SynchronizedLocalGroups.Info(server, $"Removing group '{localGroup}'.");
 
-            if (DeleteGroup2(localGroup, server))
+            if (DeleteGroup2(localGroup.Name, server))
                 LoggerSingleton.SynchronizedLocalGroups.Info($"Local Group successfully deleted {localGroup} on server {server}");
             else
                 LoggerSingleton.SynchronizedLocalGroups.Error($"Local Group unsuccessfully deleted {localGroup} on server {server}");
+            if (!SyncLAPS(server, localGroup))
+                LoggerSingleton.SynchronizedLocalGroups.Info($"Local Group successfully deleted {localGroup} on device");
+            else
+                LoggerSingleton.SynchronizedLocalGroups.Error($"Local Group unsuccessfully deleted {localGroup} on device");
         }
 
         public bool DeleteGroup2(string groupName, string server)
@@ -631,7 +635,8 @@ namespace SynchronizerLibrary.CommonServices
                         if (member.Flag == LocalGroupFlag.Add && computer.Flag == LocalGroupFlag.Add)
                         {
                             (status, statusMessage) = LAPSService.UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
-                            GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + member.Name, status);
+                            Console.WriteLine(statusMessage);
+                            GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + member.Name, status, statusMessage);
                         }
                         else if (member.Flag == LocalGroupFlag.None && computer.Flag == LocalGroupFlag.Delete)
                         {

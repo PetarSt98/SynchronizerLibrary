@@ -27,6 +27,7 @@ namespace SynchronizerLibrary.DataBuffer
 
         public void AddToObjectsList(string serverName, string computerName, string groupName, bool status, string statusMessage = null)
         {
+            Console.WriteLine(statusMessage);
             string configKey = GetConfigKey(computerName, groupName);
 
             string modifiedComputerName = ModifyComputerName(computerName);
@@ -45,8 +46,12 @@ namespace SynchronizerLibrary.DataBuffer
                 };
             }
             else 
-            {
+            {   if (ObjectLists[serverName][configKey].Status)
+                {
+                    ObjectLists[serverName][configKey].StatusMessage = statusMessage;
+                }
                 ObjectLists[serverName][configKey].Status &= status;
+                
             }
 
         }
