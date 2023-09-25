@@ -50,6 +50,51 @@ namespace SynchronizerLibrary.SOAPservices
             }
         }
 
+        public static async Task<Dictionary<string, string>> ExecutePowerShellLAPScript(string computerName,string userName, string password)
+        {
+            Console.WriteLine($"Calling SOAP Service: {computerName}");
+            LoggerSingleton.Raps.Debug($"Calling SOAP Service: {computerName}");
+
+            try
+            {
+
+                string pathToScript = @".\SOAPServiceScripts\LAPS.ps1";
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = $"-ExecutionPolicy Bypass -File \"{pathToScript}\" -SetName1 \"{computerName}\"  -UserName1 \"{userName}\" -Password1 \"{password}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using Process process = new Process { StartInfo = startInfo };
+                process.Start();
+                Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
+                Task<string> errorTask = process.StandardError.ReadToEndAsync();
+                string output = await outputTask;
+                string errors = await errorTask;
+                if (output.Length == 0 || errors.Length > 0) throw new ComputerNotFoundInActiveDirectoryException(errors);
+                LoggerSingleton.Raps.Debug($"Successful call of SOAP Service: {computerName}");
+                Dictionary<string, string> result = ConvertStringToDictionary(output);
+                process.WaitForExit();
+
+                return result;
+            }
+            catch (ComputerNotFoundInActiveDirectoryException ex)
+            {
+                Console.WriteLine($"{ex.Message} Unable to use LAPS operations for device: {computerName}");
+                LoggerSingleton.Raps.Error($"{ex.Message} Unable to use SOAP operations for device: {computerName}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                LoggerSingleton.Raps.Error($"{ex.Message}");
+                return null;
+            }
+        }
+
         public static Dictionary<string, string> ConvertStringToDictionary(string input)
         {
             Dictionary<string, string> result = new Dictionary<string, string>();

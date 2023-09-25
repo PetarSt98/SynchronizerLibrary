@@ -1,5 +1,7 @@
 ﻿using System.DirectoryServices;
 using SynchronizerLibrary.CommonServices.Exceptions;
+using SynchronizerLibrary.SOAPservices;
+
 
 namespace SynchronizerLibrary.CommonServices
 {
@@ -97,30 +99,35 @@ namespace SynchronizerLibrary.CommonServices
 
             try
             {
-                using (DirectoryEntry directoryEntry = new DirectoryEntry(ldapPath, username, password))
+
+                Dictionary<string, string> papa = Task.Run(() => SOAPMethods.ExecutePowerShellLAPScript("laptopdpp01", "svcgtw", "7KJuswxQnLXwWM3znp")).Result;
+        
+                if (papa.ContainsKey("password"))
                 {
-                    if (directoryEntry.Properties.Contains(lapsAttribute))
+                    var pass = papa["password"];
+                    Console.WriteLine("LAPS got password");
+                    if (string.IsNullOrEmpty(pass))
                     {
-                        var pass = directoryEntry.Properties[lapsAttribute].Value.ToString();
-                        Console.WriteLine("LAPS got password");
-                        if (string.IsNullOrEmpty(pass))
+                        throw new RemoteDesktopUserGroupNotFound($"Device: {machineName} is unreachable!");
+                    }
+                    (DirectoryEntry remoteDesktopGroup, statusMessage) = GetRemoteDesktopUsersGroup(machineName, "Administrator", pass);
+                    using (remoteDesktopGroup)
+                    {
+                        Console.WriteLine("Entered device");
+                        if (remoteDesktopGroup == null)
                         {
-                            throw new RemoteDesktopUserGroupNotFound($"Device: {machineName} is unreachable!");
+                            Console.WriteLine("Entered device: unsuccessful");
+                            Console.WriteLine(statusMessage);
+                            return (false, statusMessage);
                         }
-                        (DirectoryEntry remoteDesktopGroup, statusMessage) = GetRemoteDesktopUsersGroup(machineName, "Administrator", pass);
-                        using (remoteDesktopGroup)
-                        {
-                            Console.WriteLine("Entered device");
-                            if (remoteDesktopGroup == null)
-                            {
-                                Console.WriteLine("Entered device: unsuccessful");
-                                Console.WriteLine(statusMessage);
-                                return (false, statusMessage);
-                            }
-                            AddorRemoveUserToRemoteDesktopUsersGroup(remoteDesktopGroup, domain, newUser, lapsOperator);
-                        }
+                        AddorRemoveUserToRemoteDesktopUsersGroup(remoteDesktopGroup, domain, newUser, lapsOperator);
                     }
                 }
+                else
+                {
+                    return (false, "There is no such object on the server.");
+                }
+                
                 return (true, "All ok");
             }
             catch (RemoteDesktopUserGroupNotFound ex)
