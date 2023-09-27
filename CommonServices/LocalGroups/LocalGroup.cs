@@ -2,7 +2,7 @@
 using System.Text.Json;
 
 
-namespace SynchronizerLibrary.CommonServices
+namespace SynchronizerLibrary.CommonServices.LocalGroups
 {
     public class LocalGroupContent
     {

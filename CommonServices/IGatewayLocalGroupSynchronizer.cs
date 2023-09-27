@@ -1,4 +1,6 @@
-﻿namespace SynchronizerLibrary.CommonServices
+﻿using SynchronizerLibrary.CommonServices.LocalGroups;
+
+namespace SynchronizerLibrary.CommonServices
 {
     public interface IGatewayLocalGroupSynchronizer
     {

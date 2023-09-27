@@ -1,13 +1,54 @@
 ﻿using System.DirectoryServices;
 using SynchronizerLibrary.CommonServices.Exceptions;
 using SynchronizerLibrary.SOAPservices;
+using SynchronizerLibrary.CommonServices.LocalGroups;
+using SynchronizerLibrary.Loggers;
+using SynchronizerLibrary.DataBuffer;
 
 
-namespace SynchronizerLibrary.CommonServices
+namespace SynchronizerLibrary.CommonServices.LAPS
 {
     class LAPSService
     {
-        private static (DirectoryEntry, string) GetRemoteDesktopUsersGroup(string machineName, string adminUsername, string adminPassword)
+        public LAPSService()
+        {
+
+        }
+
+        public bool SyncLAPS(string serverName, LocalGroup lg)
+        {
+            bool status = true;
+            string statusMessage;
+            try
+            {
+                var computersData = lg.ComputersObj.Names.Zip(lg.ComputersObj.Flags, (i, j) => new { Name = i, Flag = j });
+                var membersData = lg.MembersObj.Names.Zip(lg.MembersObj.Flags, (i, j) => new { Name = i, Flag = j });
+                foreach (var computer in computersData)
+                {
+                    foreach (var member in membersData)
+                    {
+                        if (member.Flag == LocalGroupFlag.Add && computer.Flag == LocalGroupFlag.Add)
+                        {
+                            (status, statusMessage) = UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
+                            Console.WriteLine(statusMessage);
+                            GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + member.Name, status, statusMessage);
+                        }
+                        else if (member.Flag == LocalGroupFlag.None && computer.Flag == LocalGroupFlag.Delete)
+                        {
+                            (status, statusMessage) = UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Remove");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerSingleton.SynchronizedLocalGroups.Error(ex.Message);
+                return false;
+            }
+            return status;
+        }
+
+        private (DirectoryEntry, string) GetRemoteDesktopUsersGroup(string machineName, string adminUsername, string adminPassword)
         {
             Console.WriteLine($"LAPS password: {adminPassword}");
             try
@@ -29,7 +70,7 @@ namespace SynchronizerLibrary.CommonServices
             }
         }
 
-        private static bool MemberExists(DirectoryEntry groupEntry, string domain, string userName)
+        private bool MemberExists(DirectoryEntry groupEntry, string domain, string userName)
         {
             foreach (object member in (System.Collections.IEnumerable)groupEntry.Invoke("Members"))
             {
@@ -46,7 +87,7 @@ namespace SynchronizerLibrary.CommonServices
             return false;  // Member does not exist
         }
 
-        private static void AddorRemoveUserToRemoteDesktopUsersGroup(DirectoryEntry groupEntry, string domain, string userName, string lapsOperator)
+        private void AddorRemoveUserToRemoteDesktopUsersGroup(DirectoryEntry groupEntry, string domain, string userName, string lapsOperator)
         {
             try
             {
@@ -83,7 +124,7 @@ namespace SynchronizerLibrary.CommonServices
             }
             Console.WriteLine("Updated with LAPS");
         }
-        public static (bool, string) UpdateLaps(string machineName, string newUser, string lapsOperator)
+        public (bool, string) UpdateLaps(string machineName, string newUser, string lapsOperator)
         {
             if (lapsOperator != "Add" && lapsOperator != "Remove")
             {
