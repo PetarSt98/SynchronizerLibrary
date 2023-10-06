@@ -19,14 +19,14 @@ namespace SynchronizerLibrary.CommonServices
 
         public GatewayRapSynchronizer() { }
 
-        public List<string> GetGatewaysRapNamesAsync(string serverName)
+        public List<string> GetGatewaysRapNamesAsync(string serverName, bool cacheFlag = false)
         {
             Console.WriteLine($"Getting RAP/Policy names from gateway '{serverName}'.");
             LoggerSingleton.General.Info($"Getting RAP/Policy names from gateway '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Getting RAP/Policy names from gateway '{serverName}'.");
             try
             {
-                return GetRapNamesAsync(serverName);
+                return GetRapNamesAsync(serverName, cacheFlag);
             }
             catch (Exception ex)
             {
@@ -36,9 +36,8 @@ namespace SynchronizerLibrary.CommonServices
                 throw;
             }
         }
-        public List<string> GetRapNamesAsync(string serverName)
+        public List<string> GetRapNamesAsync(string serverName, bool cacheFlag = false)
         {
-            bool cacheFlag = false;
             if (cacheFlag)
             {
                 Console.WriteLine($"Using cached Gateway Policies");
