@@ -24,9 +24,8 @@ namespace SynchronizerLibrary.CommonServices
         public GatewayLocalGroupSynchronizer()
         {
         }
-        public bool DownloadGatewayConfig(string serverName)
+        public bool DownloadGatewayConfig(string serverName, bool cacheFlag = false)
         {
-            bool cacheFlag = false;
             if (cacheFlag)
             {
                 Console.WriteLine("Using cached downloaded Gateway Config");

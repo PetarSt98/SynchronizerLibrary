@@ -47,8 +47,7 @@ namespace SynchronizerLibrary.DataBuffer
 
         public void UpdateDatabase()
         {
-            bool sendEmail;
-            sendEmail = true;
+            bool sendEmail = false;
             using (var db = new RapContext())
             {
                 foreach (var pair in databaseStatusUpdater.Zip(partialStatus, (item, partial) => (item, partial)))
