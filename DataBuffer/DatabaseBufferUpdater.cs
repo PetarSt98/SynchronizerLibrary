@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Mail;
 using SynchronizerLibrary.SOAPservices;
 using System.Text.Json;
+using SynchronizerLibrary.RDPFile;
 
 namespace SynchronizerLibrary.DataBuffer
 {
@@ -159,7 +160,12 @@ namespace SynchronizerLibrary.DataBuffer
                                 {
                                     
                                     Console.WriteLine(subject);
-                                    SendEmail(toAddress, toAddressCC, subject, body);
+                                    string rdpContent = null;
+                                    if (uncompletedSync)
+                                    {
+                                        rdpContent = RdpFile.CustomizeRdpFile(remoteMachine);
+                                    }
+                                    SendEmail(toAddress, toAddressCC, subject, body, remoteMachine, rdpContent);
                                     Console.WriteLine("Email sent");
                                 }
 
@@ -256,7 +262,8 @@ namespace SynchronizerLibrary.DataBuffer
                                 string body = template;
 
                                 Console.WriteLine(subject);
-                                SendEmail(toAddress, toAddressCC, subject, body);
+                                string rdpContent = RdpFile.CustomizeRdpFile(remoteMachine);
+                                SendEmail(toAddress, toAddressCC, subject, body, remoteMachine, rdpContent);
 
                                 SpamFailureHandler.CleanCache(remoteMachine, users);
                             }
@@ -267,7 +274,7 @@ namespace SynchronizerLibrary.DataBuffer
             }
         }
 
-        public void SendEmail(string toAddress,string toAddressCC, string subject, string body)
+        public void SendEmail(string toAddress,string toAddressCC, string subject, string body, string deviceName, string rdpContent)
         {
 
             MailMessage message = new MailMessage();
@@ -282,9 +289,18 @@ namespace SynchronizerLibrary.DataBuffer
             message.Body = body;
             message.IsBodyHtml = true;
 
+            if (rdpContent != null)
+            {
+                using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(rdpContent)))
+                {
+                    Attachment attachment = new Attachment(stream, $"{deviceName}.rdp", "application/octet-stream");
+                    message.Attachments.Add(attachment);
+                }
+            }
+
             SmtpClient client = new SmtpClient("cernmx.cern.ch");
             client.Send(message);
-            Console.WriteLine($"Send and email to {toAddress}");
+            Console.WriteLine($"Send an email to {toAddress}");
         }
 
     }
