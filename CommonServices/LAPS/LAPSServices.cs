@@ -8,7 +8,7 @@ using SynchronizerLibrary.DataBuffer;
 
 namespace SynchronizerLibrary.CommonServices.LAPS
 {
-    class LAPSService
+    public class LAPSService
     {
         public LAPSService()
         {
@@ -124,6 +124,36 @@ namespace SynchronizerLibrary.CommonServices.LAPS
             }
             Console.WriteLine("Updated with LAPS");
         }
+
+        public void DisplayRemoteDesktopUsersGroupMembers(string machineName, string adminUsername, string adminPassword)
+        {
+            try
+            {
+                (DirectoryEntry remoteDesktopGroup, string statusMessage) = GetRemoteDesktopUsersGroup(machineName, adminUsername, adminPassword);
+
+                if (remoteDesktopGroup != null)
+                {
+                    Console.WriteLine($"Members of 'Remote Desktop Users' group on '{machineName}':");
+
+                    foreach (object member in (System.Collections.IEnumerable)remoteDesktopGroup.Invoke("Members"))
+                    {
+                        using (DirectoryEntry memberEntry = new DirectoryEntry(member))
+                        {
+                            Console.WriteLine($"- {memberEntry.Name}");
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to retrieve 'Remote Desktop Users' group on '{machineName}': {statusMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred while trying to display members of the 'Remote Desktop Users' group: {ex.Message}");
+            }
+        }
+
         public (bool, string) UpdateLaps(string machineName, string newUser, string lapsOperator)
         {
             if (lapsOperator != "Add" && lapsOperator != "Remove")
