@@ -21,8 +21,8 @@ namespace SynchronizerLibrary.EmailService
         protected string body;
         protected string toAddress;
         protected string toAddressCC;
-        protected string username = "pstojkov";
-        protected string password = "GeForce9800GT.";
+        //protected string username = "";
+        //protected string password = ".";
         protected string rdpContent = null;
         protected SpamFailureHandler cacheData;
         public EmailBuilder()
@@ -225,7 +225,7 @@ namespace SynchronizerLibrary.EmailService
             LoggerSingleton.Raps.Warn(logMessage);
             //string body = logMessage;
 
-            Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, obj.GroupName.Replace("LG-", ""), username, password)).Result;
+            Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, obj.GroupName.Replace("LG-", ""))).Result;
             if (deviceInfo != null)
             {
                 Console.WriteLine(deviceInfo["UserGivenName"]);
@@ -379,7 +379,7 @@ namespace SynchronizerLibrary.EmailService
                     string toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
                     string subject = "no-reply Remote Desktop Service device synchronization Success";
                     //string body = logMessage;
-                    Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, resource.RAPName.Replace("RAP_", ""), username, password)).Result;
+                    Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, resource.RAPName.Replace("RAP_", ""))).Result;
 
                     string firstName = deviceInfo["UserGivenName"]; // Dodaj ime
                                                                     //firstName = firstName.ToLower(); // Convert the entire string to lowercase first

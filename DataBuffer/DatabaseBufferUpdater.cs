@@ -10,8 +10,8 @@ namespace SynchronizerLibrary.DataBuffer
         private GlobalInstance globalInstance;
         private Dictionary<string, RAP_ResourceStatus> databaseStatusUpdater;
         private Dictionary<string, bool> partialStatus;
-        private string username = "pstojkov";
-        private string password = "GeForce9800GT.";
+        //private string username = "";
+        //private string password = "";
         private EmailBuilder emailParser;
         public DatabaseSynchronizator()
         {

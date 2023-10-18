@@ -5,7 +5,7 @@ namespace SynchronizerLibrary.SOAPservices
 {
     public class SOAPMethods
     {
-        public static async Task<Dictionary<string, string>> ExecutePowerShellSOAPScript(string computerName, string otherUser, string userName, string password)
+        public static async Task<Dictionary<string, string>> ExecutePowerShellSOAPScript(string computerName, string otherUser)
         {
             Console.WriteLine($"Calling SOAP Service: {computerName}");
             LoggerSingleton.Raps.Debug($"Calling SOAP Service: {computerName}");
@@ -17,7 +17,8 @@ namespace SynchronizerLibrary.SOAPservices
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = $"-ExecutionPolicy Bypass -File \"{pathToScript}\" -SetName1 \"{computerName}\" -SetUserName1 \"{otherUser}\" -UserName1 \"{userName}\" -Password1 \"{password}\"",
+                    //Arguments = $"-ExecutionPolicy Bypass -File \"{pathToScript}\" -SetName1 \"{computerName}\" -SetUserName1 \"{otherUser}\" -UserName1 \"{userName}\" -Password1 \"{password}\"",
+                    Arguments = $"-ExecutionPolicy Bypass -File \"{pathToScript}\" -SetName1 \"{computerName}\" -SetUserName1 \"{otherUser}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
