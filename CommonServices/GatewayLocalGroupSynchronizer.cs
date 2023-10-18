@@ -4,6 +4,7 @@ using System.Text.Json;
 using SynchronizerLibrary.Loggers;
 using SynchronizerLibrary.CommonServices.LocalGroups;
 using SynchronizerLibrary.CommonServices.LocalGroups.Operations;
+using SynchronizerLibrary.Caching;
 
 
 namespace SynchronizerLibrary.CommonServices
@@ -54,7 +55,9 @@ namespace SynchronizerLibrary.CommonServices
                     i++;
                 }
 
-                File.WriteAllText(path, JsonSerializer.Serialize(localGroups));
+                Cacher.SaveLocalGroupCacheToFile(localGroups);
+
+                //File.WriteAllText(newCacheFilePath, JsonSerializer.Serialize(localGroups));
                 LoggerSingleton.General.Info(serverName, "Gateway config downloaded.");
                 LoggerSingleton.SynchronizedLocalGroups.Info(serverName, "Gateway config downloaded.");
                 return true;

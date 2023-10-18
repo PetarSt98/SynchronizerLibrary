@@ -36,12 +36,13 @@ namespace SynchronizerLibrary.CommonServices
                 throw;
             }
         }
+
         public List<string> GetRapNamesAsync(string serverName, bool cacheFlag = false)
         {
             if (cacheFlag)
             {
                 Console.WriteLine($"Using cached Gateway Policies");
-                return Cacher.LoadCacheFromFile();
+                return Cacher.LoadPolicyCacheFromFile();
             }
             else
             {
@@ -101,7 +102,7 @@ namespace SynchronizerLibrary.CommonServices
                     }
                     LoggerSingleton.SynchronizedRaps.Info($"Finished querying RAP/Policy names from gateway '{serverName}'.");
 
-                    Cacher.SaveCacheToFile(rapNames);
+                    Cacher.SavePolicyCacheToFile(rapNames);
                     return rapNames;
                 }
                 catch (Exception ex)
@@ -373,7 +374,5 @@ namespace SynchronizerLibrary.CommonServices
             RapName = name;
         }
     }
-
-
 }
 
