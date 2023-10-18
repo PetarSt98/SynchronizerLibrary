@@ -1,10 +1,7 @@
-﻿param([String] $SetName1 = $(throw "Please specify the set name"),
-      [String] $UserName1 = $(throw "Please specify the username"),
-      [String] $Password1 = $(throw "Please specify the password"))
+﻿param([String] $SetName1 = $(throw "Please specify the set name"))
 
-$SecurePassword = ConvertTo-SecureString $Password1 -AsPlainText -Force 
-$Credential = New-Object System.Management.Automation.PSCredential ($UserName1, $SecurePassword) 
-$encodedPass=Get-LapsADPassword -Identity $SetName1 -Credential $Credential 
+$encodedPass=Get-LapsADPassword -Identity $SetName1
+
 $securePassword = $encodedPass.Password
 
 # Convert SecureString to BSTR (Basic Security Runtime) and then to a plain text string

@@ -38,15 +38,16 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
         public bool DeleteLocalGroups(string groupName, string server)
         {
             var success = true;
-            string username = "svcgtw";
-            string password = "7KJuswxQnLXwWM3znp";
+            //string username = "";
+            //string password = "";
             bool groupExists = false;
             DirectoryEntry newGroup = null;
 
             LoggerSingleton.SynchronizedLocalGroups.Info($"Removing group '{groupName}' from gateway '{server}'.");
             try
             {
-                var ad = new DirectoryEntry($"WinNT://CERN,computer", username, password);
+                //var ad = new DirectoryEntry($"WinNT://CERN,computer", username, password);
+                var ad = new DirectoryEntry($"WinNT://CERN,computer");
                 try
                 {
 

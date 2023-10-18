@@ -50,19 +50,19 @@ namespace SynchronizerLibrary.SOAPservices
             }
         }
 
-        public static async Task<Dictionary<string, string>> ExecutePowerShellLAPScript(string computerName,string userName, string password)
+        public static async Task<Dictionary<string, string>> ExecutePowerShellLAPScript(string computerName)
         {
             Console.WriteLine($"Calling SOAP Service: {computerName}");
             LoggerSingleton.Raps.Debug($"Calling SOAP Service: {computerName}");
 
             try
             {
-
                 string pathToScript = @".\SOAPServiceScripts\LAPS.ps1";
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = $"-ExecutionPolicy Bypass -File \"{pathToScript}\" -SetName1 \"{computerName}\"  -UserName1 \"{userName}\" -Password1 \"{password}\"",
+                    Arguments = $"-ExecutionPolicy Bypass -File \"{pathToScript}\" -SetName1 \"{computerName}\"",
+                    //Arguments = $"-ExecutionPolicy Bypass -File \"{pathToScript}\" -SetName1 \"{computerName}\"  -UserName1 \"{userName}\" -Password1 \"{password}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,

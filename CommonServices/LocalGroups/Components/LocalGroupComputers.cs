@@ -99,8 +99,8 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Components
         public bool RemoveComputerFromLocalGroup(string computerName, string groupName, string serverName, DirectoryEntry groupEntry)
         {
             var success = true;
-            string username = "svcgtw";
-            string password = "7KJuswxQnLXwWM3znp";
+            //string username = "";
+            //string password = "";
             LoggerSingleton.SynchronizedLocalGroups.Info($"Deleting computer '{computerName}' from the group '{groupName}' on gateway '{serverName}'.");
             try
             {

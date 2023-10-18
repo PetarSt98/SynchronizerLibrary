@@ -84,14 +84,15 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
         {
             var success = true;
             DirectoryEntry newGroup = null;
-            string username = "svcgtw";
-            string password = "7KJuswxQnLXwWM3znp";
+            //string username = "";
+            //string password = "";
             bool groupExists = false;
 
             LoggerSingleton.SynchronizedLocalGroups.Debug($"Adding new group: '{groupName}' on gateway: '{server}'.");
             try
             {
-                var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
+                //var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
+                var ad = new DirectoryEntry($"WinNT://{server},computer");
                 try
                 {
                     newGroup = ad.Children.Find(groupName, "group");

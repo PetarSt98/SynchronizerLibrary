@@ -74,9 +74,10 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
 
         private DirectoryEntry GetLocalGroup(string server, string groupName)
         {
-            string username = "svcgtw";
-            string password = "7KJuswxQnLXwWM3znp";
-            var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
+            //string username = "";
+            //string password = "";
+            //var ad = new DirectoryEntry($"WinNT://{server},computer", username, password);
+            var ad = new DirectoryEntry($"WinNT://{server},computer");
             try
             {
                 foreach (DirectoryEntry childEntry in ad.Children)

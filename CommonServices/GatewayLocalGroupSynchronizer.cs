@@ -71,10 +71,10 @@ namespace SynchronizerLibrary.CommonServices
             var localGroups = new List<string>();
             try
             {
-                string username = "svcgtw";
-                string password = "7KJuswxQnLXwWM3znp";
-
-                using (var groupEntry = new DirectoryEntry($"WinNT://{serverName},computer", username, password))
+                //string username = "";
+                //string password = "";
+                //using (var groupEntry = new DirectoryEntry($"WinNT://{serverName},computer", username, password))
+                using (var groupEntry = new DirectoryEntry($"WinNT://{serverName},computer"))
                 {
                     foreach (DirectoryEntry child in (IEnumerable)groupEntry.Children)
                     {

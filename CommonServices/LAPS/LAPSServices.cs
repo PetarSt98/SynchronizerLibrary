@@ -163,15 +163,15 @@ namespace SynchronizerLibrary.CommonServices.LAPS
 
             string lapsAttribute = "ms-Mcs-AdmPwd";
             string ldapPath = $"LDAP://CN={machineName},OU=Computers,OU=Organic Units,DC=cern,DC=ch";
-            string username = "svcgtw";
-            string password = "7KJuswxQnLXwWM3znp";
+            //string username = "";
+            //string password = "";
             string domain = "CERN";
             string statusMessage = "";
 
             try
             {
 
-                Dictionary<string, string> papa = Task.Run(() => SOAPMethods.ExecutePowerShellLAPScript("laptopdpp01", "svcgtw", "7KJuswxQnLXwWM3znp")).Result;
+                Dictionary<string, string> papa = Task.Run(() => SOAPMethods.ExecutePowerShellLAPScript(machineName)).Result;
         
                 if (papa.ContainsKey("password"))
                 {

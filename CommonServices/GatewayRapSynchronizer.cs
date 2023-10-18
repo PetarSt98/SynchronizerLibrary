@@ -63,11 +63,11 @@ namespace SynchronizerLibrary.CommonServices
         private List<string> QueryGatewayRapNames(string serverName)
         {
             Console.WriteLine($"Start Querying '{serverName}'.");
-            var username = "svcgtw"; // replace with your username
-            var password = "7KJuswxQnLXwWM3znp"; // replace with your password
-            var securepassword = new SecureString();
-            foreach (char c in password)
-                securepassword.AppendChar(c);
+            //var username = "";
+            //var password = "";
+            //var securepassword = new SecureString();
+            //foreach (char c in password)
+            //    securepassword.AppendChar(c);
             const string AdSearchGroupPath = "WinNT://{0}/{1},group";
             const string NamespacePath = @"\root\CIMV2\TerminalServices";
             string _oldGatewayServerHost = $@"\\{serverName}.cern.ch";
@@ -77,11 +77,12 @@ namespace SynchronizerLibrary.CommonServices
                 try
                 {
                     const string osQuery = "SELECT * FROM Win32_TSGatewayResourceAuthorizationPolicy";
-                    CimCredential Credentials = new CimCredential(PasswordAuthenticationMechanism.Default, "cern.ch", username, securepassword);
+                    //CimCredential Credentials = new CimCredential(PasswordAuthenticationMechanism.Default, "cern.ch", username, securepassword);
 
-                    WSManSessionOptions SessionOptions = new WSManSessionOptions();
-                    SessionOptions.AddDestinationCredentials(Credentials);
-                    CimSession mySession = CimSession.Create(serverName, SessionOptions);
+                    //WSManSessionOptions SessionOptions = new WSManSessionOptions();
+                    //SessionOptions.AddDestinationCredentials(Credentials);
+                    //CimSession mySession = CimSession.Create(serverName, SessionOptions);
+                    CimSession mySession = CimSession.Create(serverName);
 
                     Console.WriteLine($"Connecting to gateway policies on '{serverName}'.");
                     var queryInstanceTask = mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery);
@@ -200,8 +201,8 @@ namespace SynchronizerLibrary.CommonServices
                 var oConn = new ConnectionOptions();
                 oConn.Impersonation = ImpersonationLevel.Impersonate;
                 oConn.Authentication = AuthenticationLevel.PacketPrivacy;
-                oConn.Username = "svcgtw";
-                oConn.Password = "7KJuswxQnLXwWM3znp";
+                //oConn.Username = "";
+                //oConn.Password = "";
                 var oMScope = new ManagementScope(sHost + NamespacePath, oConn);
                 oMScope.Options.Authentication = AuthenticationLevel.PacketPrivacy;
                 oMScope.Options.Impersonation = ImpersonationLevel.Impersonate;
@@ -270,11 +271,11 @@ namespace SynchronizerLibrary.CommonServices
         public List<RapsDeletionResponse> DeleteRapsFromGateway(string serverName, List<string> rapNamesToDelete)
         {
             var result = new List<RapsDeletionResponse>();
-            var username = "svcgtw"; // replace with your username
-            var password = "7KJuswxQnLXwWM3znp"; // replace with your password
-            var securepassword = new SecureString();
-            foreach (char c in password)
-                securepassword.AppendChar(c);
+            //var username = ""; 
+            //var password = ""; 
+            //var securepassword = new SecureString();
+            //foreach (char c in password)
+            //    securepassword.AppendChar(c);
             const string AdSearchGroupPath = "WinNT://{0}/{1},group";
             const string NamespacePath = @"\root\CIMV2\TerminalServices";
             string _oldGatewayServerHost = $@"\\{serverName}.cern.ch";
@@ -285,11 +286,12 @@ namespace SynchronizerLibrary.CommonServices
                 //    "SELECT * FROM Win32_TSGatewayResourceAuthorizationPolicy " + where;
                 string osQuery = "SELECT * FROM Win32_TSGatewayResourceAuthorizationPolicy";
 
-                CimCredential Credentials = new CimCredential(PasswordAuthenticationMechanism.Default, "cern.ch", username, securepassword);
+                //CimCredential Credentials = new CimCredential(PasswordAuthenticationMechanism.Default, "cern.ch", username, securepassword);
 
-                WSManSessionOptions SessionOptions = new WSManSessionOptions();
-                SessionOptions.AddDestinationCredentials(Credentials);
-                CimSession mySession = CimSession.Create(serverName, SessionOptions);
+                //WSManSessionOptions SessionOptions = new WSManSessionOptions();
+                //SessionOptions.AddDestinationCredentials(Credentials);
+                //CimSession mySession = CimSession.Create(serverName, SessionOptions);
+                CimSession mySession = CimSession.Create(serverName);
                 IEnumerable<CimInstance> queryInstance = mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery);
                 IEnumerable<CimInstance> filteredInstances = queryInstance.Where(instance => rapNamesToDelete.Contains(instance.CimInstanceProperties["Name"].Value.ToString()));
                 foreach (CimInstance rapInstance in filteredInstances)

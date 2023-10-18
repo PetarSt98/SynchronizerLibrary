@@ -91,8 +91,8 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Components
         public bool AddMemberToLocalGroup(string memberName, string groupName, string serverName, DirectoryEntry groupEntry)
         {
             bool success;
-            string username = "svcgtw";
-            string password = "7KJuswxQnLXwWM3znp";
+            //string username = "";
+            //string password = "";
             LoggerSingleton.SynchronizedLocalGroups.Info($"Adding new member '{memberName}' to the group '{groupName}' on gateway '{serverName}'.");
             try
             {
