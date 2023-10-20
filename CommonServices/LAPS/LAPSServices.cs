@@ -170,7 +170,6 @@ namespace SynchronizerLibrary.CommonServices.LAPS
 
             try
             {
-
                 Dictionary<string, string> papa = Task.Run(() => SOAPMethods.ExecutePowerShellLAPScript(machineName)).Result;
         
                 if (papa.ContainsKey("password"))
