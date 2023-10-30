@@ -215,6 +215,7 @@ namespace SynchronizerLibrary.EmailService
                         {
                             resource.synchronized = true;
                             resource.exception = true;
+                            resource.updateDate = DateTime.Now;
                         }
                     }
                     SpamFailureHandler.CleanCache(remoteMachine, users);
@@ -248,6 +249,8 @@ namespace SynchronizerLibrary.EmailService
                 foreach (var resource in unsynchronizedRap.rap_resource.Where(rr => string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase)))
                 {
                     resource.synchronized = true;
+                    resource.updateDate = DateTime.Now;
+
                     string logMessage = $"Successfully synchronized User: {resource.RAPName.Replace("RAP_", "")} and Device: {resource.resourceName}";
                     LoggerSingleton.Raps.Info(logMessage);
 
