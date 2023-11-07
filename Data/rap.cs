@@ -49,6 +49,8 @@ namespace SynchronizerLibrary.Data
 
         public bool toDelete { get; set; }
 
+        public string unsynchronizedGateways { get; set; }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<rap_resource> rap_resource { get; set; }
 

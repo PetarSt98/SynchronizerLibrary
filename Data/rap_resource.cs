@@ -40,6 +40,8 @@ namespace SynchronizerLibrary.Data
 
         public bool toDelete { get; set; }
 
+        public string unsynchronizedGateways { get; set; }
+
         public virtual rap rap { get; set; }
         public override string ToString()
         {
