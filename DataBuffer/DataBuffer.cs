@@ -97,6 +97,8 @@ namespace SynchronizerLibrary.DataBuffer
         public string ComputerName { get; set; }
         public string GroupName { get; set; }
         public bool Status { get; set; }
+        public string UnsynchronizedServers { get; set; }
+        public string FailedStatuses { get; set; }
         public string StatusMessage { get; set; }
     }
 }

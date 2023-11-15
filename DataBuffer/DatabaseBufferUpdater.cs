@@ -1,6 +1,9 @@
 ﻿using SynchronizerLibrary.Data;
 using System.Text.Json;
 using SynchronizerLibrary.EmailService;
+using Microsoft.EntityFrameworkCore;
+
+
 
 
 namespace SynchronizerLibrary.DataBuffer
@@ -32,11 +35,27 @@ namespace SynchronizerLibrary.DataBuffer
                     {
                         databaseStatusUpdater[key] = obj.Value;
                         partialStatus[key] = obj.Value.Status;
+
+                        if (!obj.Value.Status)
+                        {
+                            databaseStatusUpdater[key].UnsynchronizedServers += name;
+                            databaseStatusUpdater[key].UnsynchronizedServers += ";";
+                            databaseStatusUpdater[key].FailedStatuses += obj.Value.StatusMessage;
+                            databaseStatusUpdater[key].FailedStatuses += ";";
+                        }
                     }
                     else
                     {
                         databaseStatusUpdater[key].Status &= obj.Value.Status;
                         partialStatus[key] |= obj.Value.Status;
+
+                        if (!obj.Value.Status)
+                        {
+                            databaseStatusUpdater[key].UnsynchronizedServers += name;
+                            databaseStatusUpdater[key].UnsynchronizedServers += ";";
+                            databaseStatusUpdater[key].FailedStatuses += obj.Value.StatusMessage;
+                            databaseStatusUpdater[key].FailedStatuses += ";";
+                        }
                     }
                 }
             }
@@ -50,39 +69,59 @@ namespace SynchronizerLibrary.DataBuffer
                 foreach (var pair in databaseStatusUpdater.Zip(partialStatus, (item, partial) => (item, partial)))
                 {
                     var obj = pair.item.Value;
-                    if (!pair.item.Value.Status)
+                    if (!pair.item.Value.Status && !pair.partial.Value)
                     {
-                        emailParser = new UnsuccessfulEmail(obj, db);
-                        if (sendEmail) emailParser.Send();
+                        emailParser = new UnsuccessfulEmail();
+                        emailParser.sendEmailFlag = sendEmail;
+                        emailParser.CheckEmailTemplate(obj);
 
-                        //if (!pair.partial.Value)
-                        //{
-                        //    var rapResourcesToDelete = db.rap_resource.Where(rr => (rr.RAPName == obj.GroupName.Replace("LG-", "RAP_") && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase))).ToList();
-                        //    db.rap_resource.RemoveRange(rapResourcesToDelete);
+                        emailParser.PrepareEmail(obj, db);
 
-                        //    LoggerSingleton.General.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
-                        //    LoggerSingleton.Raps.Warn($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
-                        //    Console.WriteLine($"Deleting unsynchronized RAP_Resource RAP_Name: {obj.GroupName.Replace("LG-", "RAP_")} resourceName: {obj.ComputerName} from MySQL database");
+                        _UpdateDatabase(obj, db);
 
-                        //    db.SaveChanges();
-                        //}
-                        //    }
-                        //    catch (Exception ex)
-                        //    {
-                        //        Console.WriteLine("No Status");
-                        //        Console.WriteLine(ex.Message);
-                        //    }
-                        //}
+                        emailParser.Send();
+                        if (!sendEmail) emailParser.cacheSpams();
                     }
                     else
                     {
                         Console.WriteLine($"  ComputerName: {obj.ComputerName}, GroupName: {obj.GroupName}");
                         emailParser = new SuccessfulEmail(obj, db);
-                        if (sendEmail) emailParser.Send();
+                        emailParser.sendEmailFlag = sendEmail;
+                        emailParser.PrepareEmail(obj, db);
+                        emailParser.Send();
                         
                     }
                 }
                 db.SaveChanges();
+            }
+        }
+        private void _UpdateDatabase(RAP_ResourceStatus? obj, RapContext db)
+        {
+            if (emailParser.UncompletedSync)
+            {
+                var matchingRapsUncompleted = db.raps
+                    .Where(r => r.resourceGroupName == obj.GroupName)
+                    .Include(r => r.rap_resource)  // Including related rap_resources
+                    .ToList();
+
+                // Filtering unsynchronized raps and their resources
+                var unsynchronizedRapsUncompleted = matchingRapsUncompleted
+                    .Where(r => r.rap_resource.Any(rr => !rr.synchronized && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase) && !rr.toDelete))
+                    .ToList();
+                foreach (var unsynchronizedRap in unsynchronizedRapsUncompleted)
+                {
+                    foreach (var resource in unsynchronizedRap.rap_resource.Where(rr => string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        resource.synchronized = true;
+                        resource.exception = true;
+                        resource.updateDate = DateTime.Now;
+                    }
+                }
+                SpamFailureHandler.CleanCache(emailParser.remoteMachine, emailParser.users);
+            }
+            else
+            {
+                emailParser.cacheData = new SpamFailureHandler(emailParser.remoteMachine, emailParser.users);
             }
         }
     }
@@ -93,8 +132,8 @@ namespace SynchronizerLibrary.DataBuffer
         public string userName { get; set; }
         public string cacheKey { get; set; }
         public int counter { get; set; }
-
-        private static string path = "./cached_spam_failures.json";
+        private const string CacheFilePath = "Cache";
+        private static string path = $".\\{CacheFilePath}\\cached_spam_failures.json";
 
         public SpamFailureHandler(string deviceName, string userName)
         {
