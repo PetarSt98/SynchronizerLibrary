@@ -95,6 +95,7 @@ namespace SynchronizerLibrary.DataBuffer
                 db.SaveChanges();
             }
         }
+
         private void _UpdateDatabase(RAP_ResourceStatus? obj, RapContext db)
         {
             if (emailParser.UncompletedSync)

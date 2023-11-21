@@ -90,7 +90,8 @@ namespace SynchronizerLibrary.EmailService
         }
         public void cacheSpams()
         {
-            cacheData.CacheSpam();
+            if (!UncompletedSync)
+                cacheData.CacheSpam();
         }
     }
 
@@ -102,6 +103,7 @@ namespace SynchronizerLibrary.EmailService
         }
         public override void PrepareEmail(RAP_ResourceStatus? obj, RapContext db)
         {
+            Console.WriteLine($"{obj.GroupName}, {obj.ComputerName}, {obj.UnsynchronizedServers}");
 
             var resource = db.rap_resource
                 .Where(r =>
@@ -249,7 +251,7 @@ namespace SynchronizerLibrary.EmailService
 
             // Filtering unsynchronized raps and their resources
             var unsynchronizedRaps = matchingRaps
-                .Where(r => r.rap_resource.Any(rr => !rr.synchronized && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase) && !rr.toDelete))
+                .Where(r => r.rap_resource.Any(rr => (!rr.synchronized || rr.unsynchronizedGateways.Length != 0) && string.Equals(rr.resourceName, obj.ComputerName, StringComparison.OrdinalIgnoreCase) && !rr.toDelete))
                 .ToList();
 
             foreach (var unsynchronizedRap in unsynchronizedRaps)
@@ -264,10 +266,9 @@ namespace SynchronizerLibrary.EmailService
                         sendEmailFlag = false;
                     }
 
-                    if (obj.Status)
-                    {
-                        resource.unsynchronizedGateways = obj.UnsynchronizedServers;
-                    }
+
+                    resource.unsynchronizedGateways = obj.UnsynchronizedServers;
+                    
 
                     if (!sendEmailFlag) return;
 
