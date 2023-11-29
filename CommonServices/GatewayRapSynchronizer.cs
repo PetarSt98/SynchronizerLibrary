@@ -42,7 +42,7 @@ namespace SynchronizerLibrary.CommonServices
             if (cacheFlag)
             {
                 Console.WriteLine($"Using cached Gateway Policies");
-                return Cacher.LoadPolicyCacheFromFile();
+                return Cacher.LoadPolicyCacheFromFile(serverName);
             }
             else
             {
@@ -102,7 +102,7 @@ namespace SynchronizerLibrary.CommonServices
                     }
                     LoggerSingleton.SynchronizedRaps.Info($"Finished querying RAP/Policy names from gateway '{serverName}'.");
 
-                    Cacher.SavePolicyCacheToFile(rapNames);
+                    Cacher.SavePolicyCacheToFile(rapNames, serverName);
                     return rapNames;
                 }
                 catch (Exception ex)

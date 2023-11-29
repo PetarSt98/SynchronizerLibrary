@@ -55,7 +55,7 @@ namespace SynchronizerLibrary.CommonServices
                     i++;
                 }
 
-                Cacher.SaveLocalGroupCacheToFile(localGroups);
+                Cacher.SaveLocalGroupCacheToFile(localGroups, serverName);
 
                 //File.WriteAllText(newCacheFilePath, JsonSerializer.Serialize(localGroups));
                 LoggerSingleton.General.Info(serverName, "Gateway config downloaded.");

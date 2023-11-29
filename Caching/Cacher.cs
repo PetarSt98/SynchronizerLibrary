@@ -10,26 +10,26 @@ namespace SynchronizerLibrary.Caching
         private const string CacheFileExtension = ".json";
         private const string CacheFilePath = "Cache";
 
-        static public void SavePolicyCacheToFile(List<string> _rapNamesCache)
+        static public void SavePolicyCacheToFile(List<string> _rapNamesCache, string serverName)
         {
             string dateTime = DateTime.Now.ToString("yyyyMMddHHmmss");
-            string newCacheFilePath = $".\\{CacheFilePath}\\{CacheFilePolicyPrefix}{dateTime}{CacheFileExtension}";
+            string newCacheFilePath = $".\\{CacheFilePath}\\{CacheFilePolicyPrefix}{serverName}{dateTime}{CacheFileExtension}";
 
             File.WriteAllText(newCacheFilePath, JsonSerializer.Serialize(_rapNamesCache));
         }
 
-        static public void SaveLocalGroupCacheToFile(List<LocalGroup> _policyNamesCache)
+        static public void SaveLocalGroupCacheToFile(List<LocalGroup> _policyNamesCache, string serverName)
         {
             string dateTime = DateTime.Now.ToString("yyyyMMddHHmmss");
-            string newCacheFilePath = $".\\{CacheFilePath}\\{CacheFileLocalGroupPrefix}{dateTime}{CacheFileExtension}";
+            string newCacheFilePath = $".\\{CacheFilePath}\\{CacheFileLocalGroupPrefix}{serverName}{dateTime}{CacheFileExtension}";
 
             File.WriteAllText(newCacheFilePath, JsonSerializer.Serialize(_policyNamesCache));
         }
 
-        static public List<string> LoadPolicyCacheFromFile()
+        static public List<string> LoadPolicyCacheFromFile(string serverName)
         {
             var directoryInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
-            var newestFile = directoryInfo.GetFiles($".\\{CacheFilePath}\\{CacheFilePolicyPrefix}*{CacheFileExtension}")
+            var newestFile = directoryInfo.GetFiles($".\\{CacheFilePath}\\{CacheFilePolicyPrefix}{serverName}*{CacheFileExtension}")
                                             .OrderByDescending(f => f.LastWriteTime)
                                             .FirstOrDefault();
 
@@ -42,10 +42,10 @@ namespace SynchronizerLibrary.Caching
             return null;
         }
 
-        static public List<LocalGroup> LoadLocalGroupCacheFromFile()
+        static public List<LocalGroup> LoadLocalGroupCacheFromFile(string serverName)
         {
             var directoryInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
-            var newestFile = directoryInfo.GetFiles($".\\{CacheFilePath}\\{CacheFileLocalGroupPrefix}*{CacheFileExtension}")
+            var newestFile = directoryInfo.GetFiles($".\\{CacheFilePath}\\{CacheFileLocalGroupPrefix}{serverName}*{CacheFileExtension}")
                                             .OrderByDescending(f => f.LastWriteTime)
                                             .FirstOrDefault();
 
