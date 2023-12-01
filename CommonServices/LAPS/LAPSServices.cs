@@ -15,7 +15,7 @@ namespace SynchronizerLibrary.CommonServices.LAPS
 
         }
 
-        public bool SyncLAPS(string serverName, LocalGroup lg)
+        public async Task<bool> SyncLAPS(string serverName, LocalGroup lg)
         {
             bool status = true;
             string statusMessage;
@@ -29,13 +29,13 @@ namespace SynchronizerLibrary.CommonServices.LAPS
                     {
                         if (member.Flag == LocalGroupFlag.Add && computer.Flag == LocalGroupFlag.Add)
                         {
-                            (status, statusMessage) = UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
+                            (status, statusMessage) = await UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
                             Console.WriteLine(statusMessage);
                             GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + member.Name, status, statusMessage);
                         }
                         else if (member.Flag == LocalGroupFlag.None && computer.Flag == LocalGroupFlag.Delete)
                         {
-                            (status, statusMessage) = UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Remove");
+                            (status, statusMessage) = await UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Remove");
                         }
                     }
                 }
@@ -154,7 +154,7 @@ namespace SynchronizerLibrary.CommonServices.LAPS
             }
         }
 
-        public (bool, string) UpdateLaps(string machineName, string newUser, string lapsOperator)
+        public async Task<(bool, string)> UpdateLaps(string machineName, string newUser, string lapsOperator)
         {
             if (lapsOperator != "Add" && lapsOperator != "Remove")
             {
@@ -170,7 +170,7 @@ namespace SynchronizerLibrary.CommonServices.LAPS
 
             try
             {
-                Dictionary<string, string> papa = Task.Run(() => SOAPMethods.ExecutePowerShellLAPScript(machineName)).Result;
+                var papa = await SOAPMethods.ExecutePowerShellLAPScript(machineName);
         
                 if (papa.ContainsKey("password"))
                 {

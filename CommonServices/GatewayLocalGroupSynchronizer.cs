@@ -175,7 +175,7 @@ namespace SynchronizerLibrary.CommonServices
             return result;
         }
 
-        public List<string> SyncLocalGroups(LocalGroupsChanges changedLocalGroups, string serverName)
+        public async Task<List<string>> SyncLocalGroups(LocalGroupsChanges changedLocalGroups, string serverName)
         {
             LoggerSingleton.General.Info(serverName, $"There are {changedLocalGroups.LocalGroupsToAdd.Count + changedLocalGroups.LocalGroupsToDelete.Count + changedLocalGroups.LocalGroupsToUpdate.Count} groups to synchronize.");
             LoggerSingleton.General.Info(serverName, $"There are {changedLocalGroups.LocalGroupsToAdd.Count } groups to add to server {serverName}.");
@@ -184,9 +184,9 @@ namespace SynchronizerLibrary.CommonServices
 
             LocalGroupOperations localGroupOperator = new LocalGroupOperations();
 
-            localGroupOperator.deleteLocalGroup.DeleteGroups(serverName, changedLocalGroups.LocalGroupsToDelete);
-            var addedGroups = localGroupOperator.addLocalGroup.AddNewGroups(serverName, changedLocalGroups.LocalGroupsToAdd);
-            localGroupOperator.modifyLocalGroup.SyncModifiedGroups(serverName, changedLocalGroups.LocalGroupsToUpdate);
+            await localGroupOperator.deleteLocalGroup.DeleteGroups(serverName, changedLocalGroups.LocalGroupsToDelete);
+            var addedGroups = await localGroupOperator.addLocalGroup.AddNewGroups(serverName, changedLocalGroups.LocalGroupsToAdd);
+            await localGroupOperator.modifyLocalGroup.SyncModifiedGroups(serverName, changedLocalGroups.LocalGroupsToUpdate);
 
             LoggerSingleton.General.Info($"Finished synchronizing groups on server {serverName}.");
             LoggerSingleton.SynchronizedLocalGroups.Info($"Finished synchronizing groups on server {serverName}.");

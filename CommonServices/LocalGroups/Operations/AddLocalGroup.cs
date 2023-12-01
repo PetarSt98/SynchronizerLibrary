@@ -3,6 +3,7 @@ using SynchronizerLibrary.Loggers;
 using SynchronizerLibrary.Data;
 using SynchronizerLibrary.CommonServices.LocalGroups.Components;
 using SynchronizerLibrary.CommonServices.LAPS;
+using System.Data.Entity;
 
 
 namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
@@ -14,7 +15,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
 
         }
 
-        public List<string> AddNewGroups(string serverName, ICollection<LocalGroup> groupsToAdd)
+        public async Task<List<string>> AddNewGroups(string serverName, ICollection<LocalGroup> groupsToAdd)
         {
             LoggerSingleton.General.Info($"Adding {groupsToAdd.Count} new groups to the gateway '{serverName}'.");
             var addedGroups = new List<string>();
@@ -23,7 +24,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                 foreach (var lg in groupsToAdd)
                 {
                     LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Adding group '{lg.Name}'.");
-                    if (AddNewGroupWithContent(serverName, lg))
+                    if (await AddNewGroupWithContent(serverName, lg))
                     {
                         addedGroups.Add(lg.Name);
 
@@ -32,9 +33,9 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                         {
                             if (member.Flag == LocalGroupFlag.Delete) continue;
 
-                            var matchingRaps = db.raps
+                            var matchingRaps = await db.raps
                                 .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
-                                .ToList();
+                                .ToListAsync();
 
                             foreach (var rap in matchingRaps)
                             {
@@ -52,7 +53,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
             return addedGroups;
         }
 
-        private bool AddNewGroupWithContent(string server, LocalGroup lg)
+        private async Task<bool> AddNewGroupWithContent(string server, LocalGroup lg)
         {
             //string groupName = FormatModifiedValue(lg.Name);
             var success = true;
@@ -68,7 +69,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                     success = false;
                 if (!localGroupComputers.SyncComputers(newGroup, lg, server))
                     success = false;
-                if (!lapsService.SyncLAPS(server, lg))
+                if (! await lapsService.SyncLAPS(server, lg))
                     success = false;
             }
             else

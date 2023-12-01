@@ -124,14 +124,14 @@ namespace SynchronizerLibrary.CommonServices
             return new List<string>();
         }
 
-        public void SynchronizeRaps(string serverName, List<string> allGatewayGroups, List<string> toDeleteGatweayGroups, List<string> gatewayRaps)
+        public async Task SynchronizeRaps(string serverName, List<string> allGatewayGroups, List<string> toDeleteGatweayGroups, List<string> gatewayRaps)
         {
             LoggerSingleton.General.Info($"Starting Policy synchronisation of server: '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Starting Policy synchronisation of server: '{serverName}'.");
             var modelRapNamesAdd = allGatewayGroups.Select(LgNameToRapName).ToList();
             var modelRapNamesDelete = toDeleteGatweayGroups.Select(LgNameToRapName).ToList();
-            AddMissingRaps(serverName, modelRapNamesAdd, gatewayRaps);
-            DeleteObsoleteRaps(serverName, modelRapNamesDelete, gatewayRaps);
+            await AddMissingRaps(serverName, modelRapNamesAdd, gatewayRaps);
+            await DeleteObsoleteRaps(serverName, modelRapNamesDelete, gatewayRaps);
             LoggerSingleton.General.Info($"Finished Policy synchronisation of server: '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Finished Policy synchronisation of server: '{serverName}'.");
         }
@@ -139,32 +139,32 @@ namespace SynchronizerLibrary.CommonServices
         {
             return lgName.Replace("LG-", "RAP_");
         }
-        private void DeleteObsoleteRaps(string serverName, List<string> modelRapNames, List<string> gatewayRaps)
+        private async Task DeleteObsoleteRaps(string serverName, List<string> modelRapNames, List<string> gatewayRaps)
         {
             var obsoleteRapNames = gatewayRaps.Intersect(modelRapNames).ToList();
             //_reporter.SetShouldDeleteRaps(serverName, obsoleteRapNames.Count);
             LoggerSingleton.General.Info($"Server:{serverName} Deleting {obsoleteRapNames.Count} RAPs from the gateway.");
             LoggerSingleton.SynchronizedRaps.Info($"Deleting {obsoleteRapNames.Count} RAPs from the gateway '{serverName}'.");
             if (obsoleteRapNames.Count > 0)
-                TryDeletingRaps(serverName, obsoleteRapNames);
+                await TryDeletingRaps(serverName, obsoleteRapNames);
             //_reporter.Info(serverName, "Finished deleting RAPs.");
             LoggerSingleton.General.Info($"Finished deleting RAPs from the gateway '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Finished deleting RAPs from the gateway '{serverName}'.");
         }
 
-        private void AddMissingRaps(string serverName, List<string> modelRapNames, List<string> gatewayRapNames)
+        private async Task AddMissingRaps(string serverName, List<string> modelRapNames, List<string> gatewayRapNames)
         {
             var missingRapNames = modelRapNames.Except(gatewayRapNames).ToList();
             //_reporter.SetShouldAddRaps(serverName, missingRapNames.Count);
             //_reporter.Info(serverName, $"Adding {missingRapNames.Count} RAPs to the gateway.");
             LoggerSingleton.General.Info($"Adding {missingRapNames.Count} RAPs to the gateway '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Adding {missingRapNames.Count} RAPs to the gateway '{serverName}'.");
-            AddMissingRaps(serverName, missingRapNames);
+            await AddMissingRaps(serverName, missingRapNames);
             //_reporter.Info(serverName, "Finished adding RAPs.");
             LoggerSingleton.General.Info($"Finished adding {missingRapNames.Count} RAPs to the gateway '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Finished adding {missingRapNames.Count} RAPs to the gateway '{serverName}'.");
         }
-        private void TryDeletingRaps(string serverName, List<string> obsoleteRapNames)
+        private async Task TryDeletingRaps(string serverName, List<string> obsoleteRapNames)
         {
             bool finished = false;
             int counter = 0;
@@ -172,7 +172,7 @@ namespace SynchronizerLibrary.CommonServices
             while (!(counter == 3 || finished))
             {
                 if (toDelete.Count == 0) break;
-                var response = DeleteRapsFromGateway(serverName, toDelete);
+                var response = await DeleteRapsFromGateway(serverName, toDelete);
                 Console.WriteLine($"Deleting raps, try #{counter + 1}"); //TODO delete
                 LoggerSingleton.SynchronizedRaps.Debug($"Deleting raps, try #{counter + 1}");
                 foreach (var res in response)
@@ -194,7 +194,7 @@ namespace SynchronizerLibrary.CommonServices
                 counter++;
             }
         }
-        public bool AddMissingRaps(string serverName, List<string> missingRapNames)
+        public async Task<bool> AddMissingRaps(string serverName, List<string> missingRapNames)
         {
             var sHost = $@"\\{serverName}";
             try
@@ -269,7 +269,7 @@ namespace SynchronizerLibrary.CommonServices
         {
             return rapName.Replace("RAP_", "LG-");
         }
-        public List<RapsDeletionResponse> DeleteRapsFromGateway(string serverName, List<string> rapNamesToDelete)
+        public async Task<List<RapsDeletionResponse>> DeleteRapsFromGateway(string serverName, List<string> rapNamesToDelete)
         {
             var result = new List<RapsDeletionResponse>();
             //var username = ""; 
@@ -299,7 +299,7 @@ namespace SynchronizerLibrary.CommonServices
                 {
                     var rapName = rapInstance.CimInstanceProperties["Name"].Value.ToString();
                     if (!rapNamesToDelete.Contains(rapName)) continue;
-                    var rapDeletion = DeleteRap(mySession, rapInstance, rapName);
+                    var rapDeletion = await DeleteRap(mySession, rapInstance, rapName);
                     result.Add(rapDeletion);
                 }
             }
@@ -326,7 +326,7 @@ namespace SynchronizerLibrary.CommonServices
             }
             return sb.ToString();
         }
-        private RapsDeletionResponse DeleteRap(CimSession mySession, CimInstance rapInstance, string rapName)
+        private async Task<RapsDeletionResponse> DeleteRap(CimSession mySession, CimInstance rapInstance, string rapName)
         {
             var rapDeletion = new RapsDeletionResponse(rapName);
             try

@@ -3,6 +3,7 @@ using SynchronizerLibrary.Loggers;
 using SynchronizerLibrary.Data;
 using SynchronizerLibrary.CommonServices.LocalGroups.Components;
 using SynchronizerLibrary.CommonServices.LAPS;
+using System.Data.Entity;
 
 namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
 {
@@ -13,17 +14,18 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
 
         }
 
-        public void SyncModifiedGroups(string serverName, List<LocalGroup> modifiedGroups)
+        public async Task SyncModifiedGroups(string serverName, List<LocalGroup> modifiedGroups)
         {
             LoggerSingleton.General.Info(serverName, $"Synchronizing content of {modifiedGroups.Count} groups.");
             using (var db = new RapContext())
             {
-                modifiedGroups.ForEach(lg => SyncGroupContent(lg, serverName, db));
+                var tasks = modifiedGroups.Select(lg => SyncGroupContentAsync(lg, serverName, db));
+                await Task.WhenAll(tasks);
                 db.SaveChanges();
             }
         }
 
-        private void SyncGroupContent(LocalGroup lg, string server, RapContext db)
+        private async Task SyncGroupContentAsync(LocalGroup lg, string server, RapContext db)
         {
             var success = true;
             var localGroup = GetLocalGroup(server, lg.Name);
@@ -40,7 +42,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
 
                 if (!localGroupComputers.SyncComputers(localGroup, lg, server))
                     success = false;
-                if (!lapsService.SyncLAPS(server, lg))
+                if (! await lapsService.SyncLAPS(server, lg))
                     success = false;
             }
             else
@@ -55,9 +57,9 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                 {
                     if (member.Flag == LocalGroupFlag.Delete) continue;
 
-                    var matchingRaps = db.raps
+                    var matchingRaps = await db.raps
                         .Where(r => (r.login == member.Name && r.resourceGroupName == lg.Name))
-                        .ToList();
+                        .ToListAsync();
 
                     foreach (var rap in matchingRaps)
                     {

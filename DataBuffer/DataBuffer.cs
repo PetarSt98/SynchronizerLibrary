@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace SynchronizerLibrary.DataBuffer
 { 
@@ -9,12 +10,12 @@ namespace SynchronizerLibrary.DataBuffer
         private static readonly object _lock = new object();
 
         public List<string> Names { get; private set; }
-        public Dictionary<string, Dictionary<string, RAP_ResourceStatus>> ObjectLists { get; private set; }
+        public ConcurrentDictionary<string, ConcurrentDictionary<string, RAP_ResourceStatus>> ObjectLists { get; private set; }
 
         private GlobalInstance()
         {
             Names = new List<string>();
-            ObjectLists = new Dictionary<string, Dictionary<string, RAP_ResourceStatus>>();
+            ObjectLists = new ConcurrentDictionary<string, ConcurrentDictionary<string, RAP_ResourceStatus>>();
         }
 
         public static string ModifyComputerName(string computerName)
@@ -24,37 +25,58 @@ namespace SynchronizerLibrary.DataBuffer
             else
                 return computerName;
         }
-
         public void AddToObjectsList(string serverName, string computerName, string groupName, bool status, string statusMessage = null)
         {
-            Console.WriteLine(statusMessage);
             string configKey = GetConfigKey(computerName, groupName);
-
             string modifiedComputerName = ModifyComputerName(computerName);
-            if (!ObjectLists.ContainsKey(serverName))
-            {
-                ObjectLists[serverName] = new Dictionary<string, RAP_ResourceStatus>();
-            }
-            if (!ObjectLists[serverName].ContainsKey(configKey))
-            {
-                ObjectLists[serverName][configKey] = new RAP_ResourceStatus
-                {
-                    ComputerName = modifiedComputerName,
-                    GroupName = groupName,
-                    Status = status,
-                    StatusMessage = statusMessage
-                };
-            }
-            else 
-            {   if (ObjectLists[serverName][configKey].Status)
-                {
-                    ObjectLists[serverName][configKey].StatusMessage = statusMessage;
-                }
-                ObjectLists[serverName][configKey].Status &= status;
-                
-            }
 
+            var serverObjects = ObjectLists.GetOrAdd(serverName, new ConcurrentDictionary<string, RAP_ResourceStatus>());
+            var resourceStatus = serverObjects.GetOrAdd(configKey, new RAP_ResourceStatus
+            {
+                ComputerName = modifiedComputerName,
+                GroupName = groupName,
+                Status = status,
+                StatusMessage = statusMessage
+            });
+
+            if (resourceStatus.Status)
+            {
+                resourceStatus.StatusMessage = statusMessage;
+            }
+            resourceStatus.Status &= status;
         }
+
+
+        //public void AddToObjectsList(string serverName, string computerName, string groupName, bool status, string statusMessage = null)
+        //{
+        //    Console.WriteLine(statusMessage);
+        //    string configKey = GetConfigKey(computerName, groupName);
+
+        //    string modifiedComputerName = ModifyComputerName(computerName);
+        //    if (!ObjectLists.ContainsKey(serverName))
+        //    {
+        //        ObjectLists[serverName] = new Dictionary<string, RAP_ResourceStatus>();
+        //    }
+        //    if (!ObjectLists[serverName].ContainsKey(configKey))
+        //    {
+        //        ObjectLists[serverName][configKey] = new RAP_ResourceStatus
+        //        {
+        //            ComputerName = modifiedComputerName,
+        //            GroupName = groupName,
+        //            Status = status,
+        //            StatusMessage = statusMessage
+        //        };
+        //    }
+        //    else 
+        //    {   if (ObjectLists[serverName][configKey].Status)
+        //        {
+        //            ObjectLists[serverName][configKey].StatusMessage = statusMessage;
+        //        }
+        //        ObjectLists[serverName][configKey].Status &= status;
+
+        //    }
+
+        //}
         public RAP_ResourceStatus GetObjectsList(string serverName, string computerName, string groupName)
         {
             string configKey = GetConfigKey(computerName, groupName);

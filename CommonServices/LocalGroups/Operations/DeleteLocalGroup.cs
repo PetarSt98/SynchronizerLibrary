@@ -12,15 +12,16 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
 
         }
 
-        public void DeleteGroups(string serverName, List<LocalGroup> groupsToDelete)
+        public async Task DeleteGroups(string serverName, List<LocalGroup> groupsToDelete)
         {
             LoggerSingleton.General.Info($"Started deleting {groupsToDelete.Count} groups on gateway '{serverName}'.");
             //_reporter.Info(serverName, $"Deleting {groupsToDelete.Count} groups.");
-            groupsToDelete.ForEach(lg => DeleteServerAndLocalGroup(serverName, lg)); // delete each group with '-' in the name
+            var deleteTasks = groupsToDelete.Select(lg => DeleteServerAndLocalGroup(serverName, lg));
+            await Task.WhenAll(deleteTasks);
             LoggerSingleton.General.Info(serverName, "Finished deleting groups.");
         }
 
-        private void DeleteServerAndLocalGroup(string server, LocalGroup localGroup)
+        private async Task DeleteServerAndLocalGroup(string server, LocalGroup localGroup)
         {
             LoggerSingleton.SynchronizedLocalGroups.Info(server, $"Removing group '{localGroup}'.");
             LAPSService lapsService = new LAPSService();
@@ -29,7 +30,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                 LoggerSingleton.SynchronizedLocalGroups.Info($"Local Group successfully deleted {localGroup} on server {server}");
             else
                 LoggerSingleton.SynchronizedLocalGroups.Error($"Local Group unsuccessfully deleted {localGroup} on server {server}");
-            if (!lapsService.SyncLAPS(server, localGroup))
+            if (! await lapsService.SyncLAPS(server, localGroup))
                 LoggerSingleton.SynchronizedLocalGroups.Info($"Local Group successfully deleted {localGroup} on device");
             else
                 LoggerSingleton.SynchronizedLocalGroups.Error($"Local Group unsuccessfully deleted {localGroup} on device");
