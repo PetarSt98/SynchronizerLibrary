@@ -170,11 +170,14 @@ namespace SynchronizerLibrary.CommonServices.LAPS
 
             try
             {
-                var papa = await SOAPMethods.ExecutePowerShellLAPScript(machineName);
-        
-                if (papa.ContainsKey("password"))
+                var lapsFetch = await SOAPMethods.ExecutePowerShellLAPScript(machineName);
+                
+                if (!lapsFetch["os"].Contains("windows", StringComparison.OrdinalIgnoreCase))
+                    return (true, "All ok");
+
+                if (lapsFetch.ContainsKey("password"))
                 {
-                    var pass = papa["password"];
+                    var pass = lapsFetch["password"];
                     Console.WriteLine("LAPS got password");
                     if (string.IsNullOrEmpty(pass))
                     {

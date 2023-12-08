@@ -18,4 +18,10 @@ if ($null -eq $securePassword) {
     }
 }
 
+$service=New-WebServiceProxy -uri "https://network.cern.ch/sc/soap/soap.fcgi?v=6&WSDL" -Namespace SOAPNetworkService -Class SOAPNetworkServiceClass
+$service.AuthValue = new-object SOAPNetworkService.Auth
+$service.AuthValue.token = $service.getAuthToken("pstojkov","GeForce9800GT.","NICE")
+# Call to recursive function for set exploration - output file containing IP addresses at C:\temp.txt
+$DeviceInfo = $service.getDeviceInfo($SetName1)
+$passDict | Add-Member -MemberType NoteProperty -Name "os" -Value $DeviceInfo.OperatingSystem.Name
 $passDict | Format-List

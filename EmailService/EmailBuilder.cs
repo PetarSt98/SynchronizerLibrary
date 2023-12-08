@@ -175,7 +175,7 @@ namespace SynchronizerLibrary.EmailService
 
                 if (obj.StatusMessage == "Access is denied." || obj.FailedStatuses.Contains("Access is denied.;"))
                 {
-                    subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                    subject = "Remote Desktop Service device synchronization Uncompleted";
                     template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
                     template = template.Replace("$reason", "TS Gateway does not have access to your device.");
                     template = template.Replace("$raison", "TS Gateway n'a pas accès à votre appareil.");
@@ -183,7 +183,7 @@ namespace SynchronizerLibrary.EmailService
                 }
                 else if (obj.StatusMessage == "There is no such object on the server." || obj.FailedStatuses.Contains("There is no such object on the server.;"))
                 {
-                    subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                    subject = "Remote Desktop Service device synchronization Uncompleted";
                     template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
                     template = template.Replace("$reason", $"The device {remoteMachine} cannot be found on the server.");
                     template = template.Replace("$raison", "L'appareil n'est pas trouvé sur le serveur.");
@@ -191,7 +191,7 @@ namespace SynchronizerLibrary.EmailService
                 }
                 else if (obj.StatusMessage.Contains("disabled") || obj.FailedStatuses.Contains("disabled"))
                 {
-                    subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                    subject = "Remote Desktop Service device synchronization Uncompleted";
                     template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
                     template = template.Replace("$reason", "Administrator user in Local User and Groups on your machine is disabled.");
                     template = template.Replace("$raison", "L'utilisateur administrateur est désactivé dans le groupe local d'utilisateurs et de groupes de votre machine.");
@@ -199,7 +199,7 @@ namespace SynchronizerLibrary.EmailService
                 }
                 else if (obj.StatusMessage == "Device is unreachable." || obj.FailedStatuses.Contains("Device is unreachable.;"))
                 {
-                    subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                    subject = "Remote Desktop Service device synchronization Uncompleted";
                     template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
                     template = template.Replace("$reason", "Your device is not reachable by TS Gateway.");
                     template = template.Replace("$raison", "Votre appareil n'est pas accessible par TS Gateway.");
@@ -207,7 +207,7 @@ namespace SynchronizerLibrary.EmailService
                 }
                 else if (obj.StatusMessage == "The network path was not found." || obj.FailedStatuses.Contains("The network path was not found.;"))
                 {
-                    subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                    subject = "Remote Desktop Service device synchronization Uncompleted";
                     template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
                     template = template.Replace("$reason", "Your device was offline when TS Gateway tried to reach it.");
                     template = template.Replace("$raison", "Votre appareil était hors ligne lorsque TS Gateway a essayé de le joindre.");
@@ -215,7 +215,7 @@ namespace SynchronizerLibrary.EmailService
                 }
                 else if (obj.StatusMessage.Contains("Unreachable password") || obj.FailedStatuses.Contains("Unreachable password"))
                 {
-                    subject = "no-reply Remote Desktop Service device synchronization Uncompleted";
+                    subject = "Remote Desktop Service device synchronization Uncompleted";
                     template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestUncompleted.htm");  // Replace with actual path
                     template = template.Replace("$reason", "Your device is not reachable by TS Gateway.");
                     template = template.Replace("$raison", "Votre appareil n'est pas accessible par TS Gateway.");
@@ -223,13 +223,13 @@ namespace SynchronizerLibrary.EmailService
                 }
                 else
                 {
-                    subject = "no-reply Remote Desktop Service device synchronization Failed";
+                    subject = "Remote Desktop Service device synchronization Failed";
                     template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestFailed.htm");  // Replace with actual path
                 }
             }
             else
             {
-                subject = "no-reply Remote Desktop Service device synchronization Failed";
+                subject = "Remote Desktop Service device synchronization Failed";
                 Console.WriteLine("No Status");
                 template = System.IO.File.ReadAllText(@".\DataBuffer\EmailTemplates\User_RequestFailed.htm");
             }
@@ -278,7 +278,7 @@ namespace SynchronizerLibrary.EmailService
                      // Prepare the email
                     toAddress = resource.RAPName.Replace("RAP_", "") + "@cern.ch";
                     toAddressCC = resource.resourceOwner.Replace(@"CERN\", "") + "@cern.ch";
-                    subject = "no-reply Remote Desktop Service device synchronization Success";
+                    subject = "Remote Desktop Service device synchronization Success";
                     //string body = logMessage;
                     Dictionary<string, string> deviceInfo = Task.Run(() => SOAPMethods.ExecutePowerShellSOAPScript(obj.ComputerName, resource.RAPName.Replace("RAP_", ""))).Result;
 
