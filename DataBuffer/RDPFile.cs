@@ -43,7 +43,7 @@ namespace SynchronizerLibrary.RDPFile
             rdpContent.AppendLine("remoteapplicationmode:i:0");
             rdpContent.AppendLine("alternate shell:s:");
             rdpContent.AppendLine("shell working directory:s:");
-            rdpContent.AppendLine("gatewayhostname:s:cerngt01.cern.ch");
+            rdpContent.AppendLine("gatewayhostname:s:cerngt.cern.ch");
             rdpContent.AppendLine("gatewayusagemethod:i:1");
             rdpContent.AppendLine("gatewaycredentialssource:i:4");
             rdpContent.AppendLine("gatewayprofileusagemethod:i:1");
