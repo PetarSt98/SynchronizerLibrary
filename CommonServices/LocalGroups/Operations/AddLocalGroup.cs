@@ -111,14 +111,13 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                 {
                     if (ex.ErrorCode == -2147022675 || ex.ErrorCode == -2147022676) // Group not found.
                     {
-                        LoggerSingleton.SynchronizedLocalGroups.Debug($"Group already exists: '{groupName}' on gateway: '{server}'.");
-                        groupExists = true;
+                        LoggerSingleton.SynchronizedLocalGroups.Debug($"Group does not exists: '{groupName}' on gateway: '{server}'.");
+                        groupExists = false;
 
-                        if (newGroup is null) return null;
                     }
                     else
                     {
-                        LoggerSingleton.SynchronizedLocalGroups.Warn($"Different exception message than Already existing group: '{groupName}' on gateway: '{server}'.");
+                        LoggerSingleton.SynchronizedLocalGroups.Warn($"Different exception message than non-existing group: '{groupName}' on gateway: '{server}'.");
                         groupExists = false;
                     }
                 }
