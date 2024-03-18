@@ -69,17 +69,25 @@ namespace SynchronizerLibrary.SOAPservices
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                using Process process = new Process { StartInfo = startInfo };
-                process.Start();
-                Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
-                Task<string> errorTask = process.StandardError.ReadToEndAsync();
-                string output = await outputTask;
-                string errors = await errorTask;
-                if (output.Length == 0 || errors.Length > 0) throw new ComputerNotFoundInActiveDirectoryException(errors);
-                LoggerSingleton.Raps.Debug($"Successful call of SOAP Service: {computerName}");
-                Dictionary<string, string> result = ConvertStringToDictionary(output);
-                process.WaitForExit();
+                Dictionary<string, string> result = new Dictionary<string, string>();
 
+                await Task.Run(async () => // Note the 'async' here
+                {
+                    using Process process = new Process { StartInfo = startInfo };
+                    process.Start();
+
+                    // Use await instead of .Result
+                    string output = await process.StandardOutput.ReadToEndAsync();
+                    string errors = await process.StandardError.ReadToEndAsync();
+                    process.WaitForExit();
+
+                    if (output.Length == 0 || errors.Length > 0)
+                        throw new ComputerNotFoundInActiveDirectoryException(errors);
+
+                    result = ConvertStringToDictionary(output);
+                });
+
+                LoggerSingleton.Raps.Debug($"Successful call of SOAP Service: {computerName}");
                 return result;
             }
             catch (ComputerNotFoundInActiveDirectoryException ex)

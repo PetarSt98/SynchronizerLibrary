@@ -15,7 +15,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
 
         }
 
-        public async Task<List<string>> AddNewGroups(string serverName, ICollection<LocalGroup> groupsToAdd)
+        public async Task<List<string>> AddNewGroups(string serverName, ICollection<LocalGroup> groupsToAdd, string specialFlag="")
         {
             LoggerSingleton.General.Info($"Adding {groupsToAdd.Count} new groups to the gateway '{serverName}'.");
             var addedGroups = new List<string>();
@@ -24,11 +24,15 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                 foreach (var lg in groupsToAdd)
                 {
                     LoggerSingleton.SynchronizedLocalGroups.Info(serverName, $"Adding group '{lg.Name}'.");
-                    if (await AddNewGroupWithContent(serverName, lg))
+                    Console.WriteLine($"Adding group '{lg.Name}'.");
+                    if (await AddNewGroupWithContent(serverName, lg, specialFlag))
                     {
                         addedGroups.Add(lg.Name);
 
                         LoggerSingleton.SynchronizedLocalGroups.Info($"Synchronized Local Group: {lg.Name} successfuly!");
+
+                        if (specialFlag == "serverInit") continue;
+
                         foreach (var member in lg.MembersObj.Names.Zip(lg.MembersObj.Flags, (name, flag) => new { Name = name, Flag = flag }))
                         {
                             if (member.Flag == LocalGroupFlag.Delete) continue;
@@ -53,7 +57,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
             return addedGroups;
         }
 
-        private async Task<bool> AddNewGroupWithContent(string server, LocalGroup lg)
+        private async Task<bool> AddNewGroupWithContent(string server, LocalGroup lg, string specialFlag="")
         {
             //string groupName = FormatModifiedValue(lg.Name);
             var success = true;
@@ -69,8 +73,12 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                     success = false;
                 if (!localGroupComputers.SyncComputers(newGroup, lg, server))
                     success = false;
-                if (! await lapsService.SyncLAPS(server, lg))
-                    success = false;
+
+                if (specialFlag != "serverInit")
+                {
+                    if (!await lapsService.SyncLAPS(server, lg))
+                        success = false;
+                }
             }
             else
             {
@@ -104,7 +112,9 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                     if (ex.ErrorCode == -2147022675 || ex.ErrorCode == -2147022676) // Group not found.
                     {
                         LoggerSingleton.SynchronizedLocalGroups.Debug($"Group already exists: '{groupName}' on gateway: '{server}'.");
-                        groupExists = false;
+                        groupExists = true;
+
+                        if (newGroup is null) return null;
                     }
                     else
                     {

@@ -30,6 +30,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Components
         public bool AddComputerToLocalGroup(string computerName, string groupName, string serverName, DirectoryEntry groupEntry)
         {
             bool success;
+            Console.WriteLine($"Adding computer: {computerName} in group: {groupName}");
             LoggerSingleton.SynchronizedLocalGroups.Info($"Adding new computer '{computerName}' to the group '{groupName}' on gateway '{serverName}'.");
             try
             {
@@ -60,6 +61,9 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Components
                     }
                     catch (System.Reflection.TargetInvocationException ex)
                     {
+                        groupEntry.Invoke("Add", $"WinNT://{computerName},computer");
+                        groupEntry.CommitChanges();
+                        break;
                         i++;
                         Console.WriteLine($"Failed attempt:{i}");
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Failed attempt:{i}");

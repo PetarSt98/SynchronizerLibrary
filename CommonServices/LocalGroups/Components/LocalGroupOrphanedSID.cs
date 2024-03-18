@@ -42,8 +42,12 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Components
                 }
                 catch (Exception ex)
                 {
-                    LoggerSingleton.SynchronizedLocalGroups.Error(ex, $"Failed removing SID: '{member.Name}'.");
-                    success = false;
+                    if (ex.InnerException != null &&
+                        !ex.InnerException.Message.Contains("The specified account name is not a member of the group"))
+                    {
+                        LoggerSingleton.SynchronizedLocalGroups.Error(ex, $"Failed removing SID: '{member.Name}'.");
+                        success = false;
+                    }
                 }
 
                 globalSuccess = globalSuccess && success;

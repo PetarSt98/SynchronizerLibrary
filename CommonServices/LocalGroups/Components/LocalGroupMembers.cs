@@ -93,6 +93,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Components
             bool success;
             //string username = "";
             //string password = "";
+            Console.WriteLine($"Adding member: {memberName} in group: {groupName}");
             LoggerSingleton.SynchronizedLocalGroups.Info($"Adding new member '{memberName}' to the group '{groupName}' on gateway '{serverName}'.");
             try
             {
@@ -111,7 +112,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Components
                     catch (System.Reflection.TargetInvocationException ex2)
                     {
                         LoggerSingleton.SynchronizedLocalGroups.Warn($"Member already exists '{memberName}' to the group '{groupName}' on gateway '{serverName}'.");
-                        Console.WriteLine(ex.Message);
+                        Console.WriteLine($"Member already exists '{memberName}' to the group '{groupName}' on gateway '{serverName}'.");
                     }
                     catch (Exception ex2)
                     {

@@ -19,14 +19,14 @@ namespace SynchronizerLibrary.CommonServices
 
         public GatewayRapSynchronizer() { }
 
-        public List<string> GetGatewaysRapNamesAsync(string serverName, bool cacheFlag = false)
+        public async Task<List<string>> GetGatewaysRapNamesAsync(string serverName, bool cacheFlag = false)
         {
             Console.WriteLine($"Getting RAP/Policy names from gateway '{serverName}'.");
             LoggerSingleton.General.Info($"Getting RAP/Policy names from gateway '{serverName}'.");
             LoggerSingleton.SynchronizedRaps.Info($"Getting RAP/Policy names from gateway '{serverName}'.");
             try
             {
-                return GetRapNamesAsync(serverName, cacheFlag);
+                return await GetRapNamesAsync(serverName, cacheFlag);
             }
             catch (Exception ex)
             {
@@ -37,7 +37,7 @@ namespace SynchronizerLibrary.CommonServices
             }
         }
 
-        public List<string> GetRapNamesAsync(string serverName, bool cacheFlag = false)
+        public async Task<List<string>> GetRapNamesAsync(string serverName, bool cacheFlag = false)
         {
             if (cacheFlag)
             {
@@ -169,9 +169,10 @@ namespace SynchronizerLibrary.CommonServices
             bool finished = false;
             int counter = 0;
             var toDelete = new List<string>(obsoleteRapNames);
-            while (!(counter == 3 || finished))
+            while (!(counter == 30 || finished))
             {
                 if (toDelete.Count == 0) break;
+                
                 var response = await DeleteRapsFromGateway(serverName, toDelete);
                 Console.WriteLine($"Deleting raps, try #{counter + 1}"); //TODO delete
                 LoggerSingleton.SynchronizedRaps.Debug($"Deleting raps, try #{counter + 1}");
@@ -229,31 +230,41 @@ namespace SynchronizerLibrary.CommonServices
                 inParameters["PortNumbers"] = "3389";
                 foreach (var rapName in missingRapNames)
                 {
-                    //_reporter.Info(serverName, $"Adding '{rapName}'.");
-                    LoggerSingleton.SynchronizedRaps.Info($"Adding new RAP '{rapName}' to the gateway '{serverName}'.");
-                    var groupName = ConvertToLgName(rapName);
-                    inParameters["Name"] = "" + rapName;
-                    inParameters["ResourceGroupName"] = groupName;
-                    inParameters["UserGroupNames"] = groupName;
-
-                    ManagementBaseObject outParameters = processClass.InvokeMethod("Create", inParameters, imo);
-
-                    if ((uint)outParameters["ReturnValue"] == 0)
+                    for (int retryCnt = 0; retryCnt < 10; retryCnt++)
                     {
-                        Console.WriteLine($"{rapName} created. {++i}/{missingRapNames.Count}"); //TODO delete
-                        LoggerSingleton.SynchronizedRaps.Info($"RAP '{rapName}' added to the gateway '{serverName}'.");
-                        //GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + rapName, true);
-                        //_reporter.IncrementAddedRaps(serverName);
-                    }
-                    else
-                    {
-                        if ((uint)outParameters["ReturnValue"] == 2147749913)
+                        Console.WriteLine($"Adding RAP {rapName}");
+                        //_reporter.Info(serverName, $"Adding '{rapName}'.");
+                        LoggerSingleton.SynchronizedRaps.Info($"Adding new RAP '{rapName}' to the gateway '{serverName}'.");
+                        var groupName = ConvertToLgName(rapName);
+                        inParameters["Name"] = "" + rapName;
+                        inParameters["ResourceGroupName"] = groupName;
+                        inParameters["UserGroupNames"] = groupName;
+
+                        ManagementBaseObject outParameters = processClass.InvokeMethod("Create", inParameters, imo);
+
+                        if ((uint)outParameters["ReturnValue"] == 0)
                         {
-                            LoggerSingleton.SynchronizedRaps.Warn($"Error creating RAP: '{rapName}'. Reason: Already exists.");
+                            Console.WriteLine($"{rapName} created. {++i}/{missingRapNames.Count}"); //TODO delete
+                            LoggerSingleton.SynchronizedRaps.Info($"RAP '{rapName}' added to the gateway '{serverName}'.");
+                            break;
                             //GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + rapName, true);
+                            //_reporter.IncrementAddedRaps(serverName);
                         }
                         else
-                            LoggerSingleton.SynchronizedRaps.Error($"Error creating RAP: '{rapName}'. Reason: {(uint)outParameters["ReturnValue"]}.");
+                        {
+                            if ((uint)outParameters["ReturnValue"] == 2147749913)
+                            {
+                                LoggerSingleton.SynchronizedRaps.Warn($"Error creating RAP: '{rapName}'. Reason: Already exists.");
+                                //GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + rapName, true);
+                                break;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Error creating RAP: '{rapName}'. Reason: {(uint)outParameters["ReturnValue"]}.");
+                                LoggerSingleton.SynchronizedRaps.Error($"Error creating RAP: '{rapName}'. Reason: {(uint)outParameters["ReturnValue"]}.");
+                                Console.WriteLine($"Retry number {retryCnt}");
+                            }
+                        }
                     }
                 }
                 return true;
@@ -265,10 +276,12 @@ namespace SynchronizerLibrary.CommonServices
                 return false;
             }
         }
+
         private string ConvertToLgName(string rapName)
         {
             return rapName.Replace("RAP_", "LG-");
         }
+
         public async Task<List<RapsDeletionResponse>> DeleteRapsFromGateway(string serverName, List<string> rapNamesToDelete)
         {
             var result = new List<RapsDeletionResponse>();
@@ -295,12 +308,31 @@ namespace SynchronizerLibrary.CommonServices
                 CimSession mySession = CimSession.Create(serverName);
                 IEnumerable<CimInstance> queryInstance = mySession.QueryInstances(_oldGatewayServerHost + NamespacePath, "WQL", osQuery);
                 IEnumerable<CimInstance> filteredInstances = queryInstance.Where(instance => rapNamesToDelete.Contains(instance.CimInstanceProperties["Name"].Value.ToString()));
+                //foreach (CimInstance rapInstance in filteredInstances)
+                //{
+                //    var rapName = rapInstance.CimInstanceProperties["Name"].Value.ToString();
+                //    if (!rapNamesToDelete.Contains(rapName)) continue;
+                //    var rapDeletion = await DeleteRap(mySession, rapInstance, rapName);
+                //    result.Add(rapDeletion);
+                //}
                 foreach (CimInstance rapInstance in filteredInstances)
                 {
                     var rapName = rapInstance.CimInstanceProperties["Name"].Value.ToString();
                     if (!rapNamesToDelete.Contains(rapName)) continue;
-                    var rapDeletion = await DeleteRap(mySession, rapInstance, rapName);
-                    result.Add(rapDeletion);
+
+                    var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(20));
+                    var deleteTask = DeleteRap(mySession, rapInstance, rapName, cancellationTokenSource.Token);
+
+                    if (await Task.WhenAny(deleteTask, Task.Delay(Timeout.Infinite, cancellationTokenSource.Token)) == deleteTask)
+                    {
+                        // Task completed within timeout
+                        result.Add(await deleteTask);
+                    }
+                    else
+                    {
+                        // Task timed out
+                        LoggerSingleton.SynchronizedRaps.Warn($"Timed out while deleting RAP '{rapName}'. Skipping to next RAP.");
+                    }
                 }
             }
             catch (Exception ex)
@@ -310,6 +342,7 @@ namespace SynchronizerLibrary.CommonServices
 
             return result;
         }
+
         private string CreateWhereClause(IEnumerable<string> names)
         {
             var enumerable = names.ToList();
@@ -326,33 +359,61 @@ namespace SynchronizerLibrary.CommonServices
             }
             return sb.ToString();
         }
-        private async Task<RapsDeletionResponse> DeleteRap(CimSession mySession, CimInstance rapInstance, string rapName)
+        //private async Task<RapsDeletionResponse> DeleteRap(CimSession mySession, CimInstance rapInstance, string rapName)
+        //{
+        //    var rapDeletion = new RapsDeletionResponse(rapName);
+        //    try
+        //    {
+        //        var result = mySession.InvokeMethod(rapInstance, "Delete", null);
+        //        if (int.Parse(result.ReturnValue.Value.ToString()) == 0)
+        //        {
+        //            rapDeletion.Deleted = true;
+        //            LoggerSingleton.SynchronizedRaps.Info($"Deleted RAP '{rapName}'.");
+        //        }
+        //    }
+        //    catch (CimException ex) // catch only CIM exceptions
+        //    {
+        //        if (ex.Message.Contains("NotFound")) // check if the error message contains "NotFound"
+        //        {
+        //            LoggerSingleton.SynchronizedRaps.Warn($"Could not find RAP '{rapName}' to delete."); // log a warning
+        //            rapDeletion.Deleted = false;
+        //        }
+        //        else // handle all other CIM exceptions
+        //        {
+        //            LoggerSingleton.SynchronizedRaps.Error(ex, $"Error deleting RAP '{rapName}'.");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        LoggerSingleton.SynchronizedRaps.Error(ex, $"Error deleting rap '{rapName}'.");
+        //    }
+
+        //    return rapDeletion;
+        //}
+        private async Task<RapsDeletionResponse> DeleteRap(CimSession mySession, CimInstance rapInstance, string rapName, CancellationToken cancellationToken)
         {
             var rapDeletion = new RapsDeletionResponse(rapName);
             try
             {
-                var result = mySession.InvokeMethod(rapInstance, "Delete", null);
-                if (int.Parse(result.ReturnValue.Value.ToString()) == 0)
+                // Run the deletion process in a task to support cancellation
+                await Task.Run(() =>
                 {
-                    rapDeletion.Deleted = true;
-                    LoggerSingleton.SynchronizedRaps.Info($"Deleted RAP '{rapName}'.");
-                }
+                    var result = mySession.InvokeMethod(rapInstance, "Delete", null);
+                    if (int.Parse(result.ReturnValue.Value.ToString()) == 0)
+                    {
+                        rapDeletion.Deleted = true;
+                        LoggerSingleton.SynchronizedRaps.Info($"Deleted RAP '{rapName}'.");
+                    }
+                }, cancellationToken);
             }
-            catch (CimException ex) // catch only CIM exceptions
+            catch (OperationCanceledException)
             {
-                if (ex.Message.Contains("NotFound")) // check if the error message contains "NotFound"
-                {
-                    LoggerSingleton.SynchronizedRaps.Warn($"Could not find RAP '{rapName}' to delete."); // log a warning
-                    rapDeletion.Deleted = false;
-                }
-                else // handle all other CIM exceptions
-                {
-                    LoggerSingleton.SynchronizedRaps.Error(ex, $"Error deleting RAP '{rapName}'.");
-                }
+                LoggerSingleton.SynchronizedRaps.Warn($"Deletion of RAP '{rapName}' was cancelled due to timeout.");
+                rapDeletion.Deleted = false;
             }
             catch (Exception ex)
             {
-                LoggerSingleton.SynchronizedRaps.Error(ex, $"Error deleting rap '{rapName}'.");
+                LoggerSingleton.SynchronizedRaps.Error(ex, $"Error deleting RAP '{rapName}'.");
             }
 
             return rapDeletion;

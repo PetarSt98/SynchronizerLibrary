@@ -25,7 +25,7 @@ namespace SynchronizerLibrary.CommonServices
         public GatewayLocalGroupSynchronizer()
         {
         }
-        public bool DownloadGatewayConfig(string serverName, bool cacheFlag = false)
+        public async Task<bool> DownloadGatewayConfig(string serverName, bool cacheFlag = false)
         {
             if (cacheFlag)
             {
@@ -33,9 +33,9 @@ namespace SynchronizerLibrary.CommonServices
                 return true;
             }
             LoggerSingleton.General.Info($"Started fetching Local Groups from the server {serverName}");
-            return ReadRemoteGatewayConfig(serverName);
+            return await ReadRemoteGatewayConfig(serverName);
         }
-        private bool ReadRemoteGatewayConfig(string serverName)
+        private async Task<bool> ReadRemoteGatewayConfig(string serverName)
         {
             try
             {
@@ -44,7 +44,7 @@ namespace SynchronizerLibrary.CommonServices
                 var localGroups = new List<LocalGroup>();
                 var server = $"{serverName}.cern.ch";
                 var path = serverName + ".json";
-                var localGroupNames = GetAllLocalGroups(server);
+                var localGroupNames = await GetAllLocalGroups(server);
                 var i = 1;
                 foreach (var lg in localGroupNames)
                 {
@@ -69,7 +69,7 @@ namespace SynchronizerLibrary.CommonServices
             }
         }
 
-        public List<string> GetAllLocalGroups(string serverName)
+        public async Task<List<string>> GetAllLocalGroups(string serverName)
         {
             var localGroups = new List<string>();
             try
@@ -175,7 +175,7 @@ namespace SynchronizerLibrary.CommonServices
             return result;
         }
 
-        public async Task<List<string>> SyncLocalGroups(LocalGroupsChanges changedLocalGroups, string serverName)
+        public async Task<List<string>> SyncLocalGroups(LocalGroupsChanges changedLocalGroups, string serverName, string specialFlag="")
         {
             LoggerSingleton.General.Info(serverName, $"There are {changedLocalGroups.LocalGroupsToAdd.Count + changedLocalGroups.LocalGroupsToDelete.Count + changedLocalGroups.LocalGroupsToUpdate.Count} groups to synchronize.");
             LoggerSingleton.General.Info(serverName, $"There are {changedLocalGroups.LocalGroupsToAdd.Count } groups to add to server {serverName}.");
@@ -185,7 +185,7 @@ namespace SynchronizerLibrary.CommonServices
             LocalGroupOperations localGroupOperator = new LocalGroupOperations();
 
             await localGroupOperator.deleteLocalGroup.DeleteGroups(serverName, changedLocalGroups.LocalGroupsToDelete);
-            var addedGroups = await localGroupOperator.addLocalGroup.AddNewGroups(serverName, changedLocalGroups.LocalGroupsToAdd);
+            var addedGroups = await localGroupOperator.addLocalGroup.AddNewGroups(serverName, changedLocalGroups.LocalGroupsToAdd, specialFlag);
             await localGroupOperator.modifyLocalGroup.SyncModifiedGroups(serverName, changedLocalGroups.LocalGroupsToUpdate);
 
             LoggerSingleton.General.Info($"Finished synchronizing groups on server {serverName}.");

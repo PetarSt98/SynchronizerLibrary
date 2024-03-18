@@ -48,7 +48,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
             try
             {
                 //var ad = new DirectoryEntry($"WinNT://CERN,computer", username, password);
-                var ad = new DirectoryEntry($"WinNT://CERN,computer");
+                var ad = new DirectoryEntry($"WinNT://{server},computer");
                 try
                 {
 
@@ -57,7 +57,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                 }
                 catch (System.Runtime.InteropServices.COMException ex)
                 {
-                    if (ex.ErrorCode == -2147022675) // Group not found.
+                    if (ex.ErrorCode == -2147022675 || ex.Message.Contains("The group name could not be found"))
                     {
                         groupExists = false;
                     }
