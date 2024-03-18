@@ -30,8 +30,7 @@ namespace SynchronizerLibrary.CommonServices.LAPS
                         if (member.Flag == LocalGroupFlag.Add && computer.Flag == LocalGroupFlag.Add)
                         {
                             (status, statusMessage) = await UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Add");
-                            //Console.WriteLine(statusMessage);
-                            statusMessage = "All ok";
+                            Console.WriteLine(statusMessage);
                             GlobalInstance.Instance.AddToObjectsList(serverName, computer.Name.Replace("$", ""), "LG-" + member.Name, status, statusMessage);
                         }
                         else if (member.Flag == LocalGroupFlag.None && computer.Flag == LocalGroupFlag.Delete)
