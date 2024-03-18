@@ -51,7 +51,31 @@ namespace SynchronizerLibrary.CommonServices
                     Console.Write($"\rDownloading {serverName} config - {i + 1}/{localGroupNames.Count} - {100 * (i + 1) / localGroupNames.Count}%"); //TODO delete
                     LoggerSingleton.SynchronizedLocalGroups.Debug($"\r {i} - Downloading {serverName} config - {i + 1}/{localGroupNames.Count} - {100 * (i + 1) / localGroupNames.Count}%");
                     var members = GetGroupMembers(lg, serverName + ".cern.ch");
-                    localGroups.Add(new LocalGroup(lg, members));
+
+                    foreach (var member in members)
+                    {
+                        if (member.StartsWith(Constants.OrphanedSid))
+                        {
+                            try
+                            {
+                                var localGroup = ModifyLocalGroup.GetLocalGroup(server, lg);
+                                localGroup.Invoke("Remove", $"WinNT://{member}");
+                                Console.WriteLine($"Removed SID: '{member}'.");
+                                LoggerSingleton.SynchronizedLocalGroups.Info($"Removed SID: '{member}'.");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Failed removing SID: '{member}'.");
+                                LoggerSingleton.SynchronizedLocalGroups.Error(ex, $"Failed removing SID: '{member}'.");
+                                localGroups.Add(new LocalGroup(lg, members));
+                            }
+                        }
+                        else
+                        {
+                            localGroups.Add(new LocalGroup(lg, members));
+                        }
+                    }
+
                     i++;
                 }
 
