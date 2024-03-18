@@ -74,7 +74,7 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
             }
         }
 
-        private DirectoryEntry GetLocalGroup(string server, string groupName)
+        public static DirectoryEntry GetLocalGroup(string server, string groupName)
         {
             //string username = "";
             //string password = "";
