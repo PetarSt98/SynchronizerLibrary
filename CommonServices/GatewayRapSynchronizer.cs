@@ -393,27 +393,37 @@ namespace SynchronizerLibrary.CommonServices
         private async Task<RapsDeletionResponse> DeleteRap(CimSession mySession, CimInstance rapInstance, string rapName, CancellationToken cancellationToken)
         {
             var rapDeletion = new RapsDeletionResponse(rapName);
-            try
+
+            for (int i = 0; i < 5; i++)
             {
-                // Run the deletion process in a task to support cancellation
-                await Task.Run(() =>
+
+                try
                 {
-                    var result = mySession.InvokeMethod(rapInstance, "Delete", null);
-                    if (int.Parse(result.ReturnValue.Value.ToString()) == 0)
+                    // Run the deletion process in a task to support cancellation
+                    await Task.Run(() =>
                     {
-                        rapDeletion.Deleted = true;
-                        LoggerSingleton.SynchronizedRaps.Info($"Deleted RAP '{rapName}'.");
-                    }
-                }, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                LoggerSingleton.SynchronizedRaps.Warn($"Deletion of RAP '{rapName}' was cancelled due to timeout.");
-                rapDeletion.Deleted = false;
-            }
-            catch (Exception ex)
-            {
-                LoggerSingleton.SynchronizedRaps.Error(ex, $"Error deleting RAP '{rapName}'.");
+                        var result = mySession.InvokeMethod(rapInstance, "Delete", null);
+                        if (int.Parse(result.ReturnValue.Value.ToString()) == 0)
+                        {
+                            rapDeletion.Deleted = true;
+                            LoggerSingleton.SynchronizedRaps.Info($"Deleted RAP '{rapName}'.");
+                        }
+                    }, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    LoggerSingleton.SynchronizedRaps.Warn($"Deletion of RAP '{rapName}' was cancelled due to timeout.");
+                    rapDeletion.Deleted = false;
+                }
+                catch (Exception ex)
+                {
+                    rapDeletion.Deleted = false;
+                    LoggerSingleton.SynchronizedRaps.Error(ex, $"Error deleting RAP '{rapName}'.");
+                }
+                if (rapDeletion.Deleted)
+                {
+                    break;
+                }
             }
 
             return rapDeletion;
