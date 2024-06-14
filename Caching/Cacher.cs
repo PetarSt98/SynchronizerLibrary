@@ -51,8 +51,20 @@ namespace SynchronizerLibrary.Caching
 
             if (newestFile != null)
             {
-                var content = File.ReadAllText(newestFile.FullName);
-                return JsonSerializer.Deserialize<List<LocalGroup>>(content);
+                try
+                {
+                    var content = File.ReadAllText(newestFile.FullName);
+                    var serializedContent = JsonSerializer.Deserialize<List<LocalGroup>>(content);
+                    return serializedContent;
+                }
+                catch (JsonException jsonEx)
+                {
+                    Console.WriteLine("JSON Exception: " + jsonEx.Message);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("General Exception: " + ex.Message);
+                }
             }
 
             return null;
