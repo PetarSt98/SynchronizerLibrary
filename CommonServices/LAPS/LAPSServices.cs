@@ -35,6 +35,7 @@ namespace SynchronizerLibrary.CommonServices.LAPS
                         }
                         else if (member.Flag == LocalGroupFlag.None && computer.Flag == LocalGroupFlag.Delete)
                         {
+                            continue; // Skipping raps removal
                             (status, statusMessage) = await UpdateLaps(computer.Name.Replace("$", ""), member.Name, "Remove");
                         }
                     }

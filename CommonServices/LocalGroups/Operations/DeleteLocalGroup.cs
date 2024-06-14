@@ -30,10 +30,11 @@ namespace SynchronizerLibrary.CommonServices.LocalGroups.Operations
                 LoggerSingleton.SynchronizedLocalGroups.Info($"Local Group successfully deleted {localGroup} on server {server}");
             else
                 LoggerSingleton.SynchronizedLocalGroups.Error($"Local Group unsuccessfully deleted {localGroup} on server {server}");
-            if (! await lapsService.SyncLAPS(server, localGroup))
-                LoggerSingleton.SynchronizedLocalGroups.Info($"Local Group successfully deleted {localGroup} on device");
-            else
-                LoggerSingleton.SynchronizedLocalGroups.Error($"Local Group unsuccessfully deleted {localGroup} on device");
+            // Skipping LAPS removal
+            //if (! await lapsService.SyncLAPS(server, localGroup))
+            //    LoggerSingleton.SynchronizedLocalGroups.Info($"Local Group successfully deleted {localGroup} on device");
+            //else
+            //    LoggerSingleton.SynchronizedLocalGroups.Error($"Local Group unsuccessfully deleted {localGroup} on device");
         }
 
         public bool DeleteLocalGroups(string groupName, string server)
